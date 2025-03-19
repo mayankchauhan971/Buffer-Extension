@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="jquery-3.6.0.min.js"></script>
+    <script src="popup.js"></script>
+    <link
+      href="http://fonts.googleapis.com/css?family=Roboto"
+      rel="stylesheet"
+      type="text/css"
+    />
+
+    <style>
+      html,
+      body {
+        width: 268px;
+        height: 180px;
+        border-radius: 10px;
+        background: #fff;
+        text-align: center;
+        margin: 0;
+        padding: 0;
+        font-family: "Roboto", sans-serif;
+        font-size: 12px;
+        overflow: hidden;
+      }
+
+      .container {
+        margin: 16px 16px 16px 16px;
+      }
+
+      h1 {
+        color: #000;
+        font-size: 16px;
+        padding-bottom: 8px;
+        margin: 0 !important;
+      }
+
+      .btn {
+        display: block;
+        height: 40px;
+        -webkit-border-radius: 4px;
+        -moz-border-radius: 4px;
+        border-radius: 4px;
+        text-decoration: none;
+        line-height: 40px;
+        font-size: 14px;
+        margin-bottom: 8px;
+        cursor: pointer;
+      }
+
+      .btn.primary {
+        background: #2c4bff;
+        color: #fff;
+      }
+
+      .btn.secondary {
+        border: 1px solid #b8b8b8;
+        color: #636363;
+      }
+
+      .buffer {
+        background: url("buffer-logo.svg") no-repeat;
+        width: 50px;
+        height: 12px;
+        display: block;
+        float: right;
+        clear: both;
+        margin-top: 8px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <h1>What would you like to do?</h1>
+      <a href="#" class="btn primary" id="create-post">Create Post</a>
+      <a href="#" class="btn secondary" id="create-idea">Save Idea</a>
+
+      <a href="https://publish.buffer.com" target="_blank" class="buffer"></a>
+    </div>
+  </body>
+</html>
