@@ -1,59 +1,25 @@
 /* Initial Setup
 –––––––––––––––––––––––––––––––––––––––––––––––––– */
 
-init();
+// Initialize when the service worker is installed
+chrome.runtime.onInstalled.addListener(() => {
+  init();
+});
 
 function init() {
-  // By default set the onClicked action.
-  var action = chrome.action != null ? chrome.action : chrome.browserAction;
-  action.setPopup({ popup: "popup.html" });
-
+  // Set the popup
+  chrome.action.setPopup({ popup: "popup.html" });
+  
+  // Initialize other components
   setDefaultSettings();
-
   setContextMenus();
-
   setIcon();
-
   setUninstallPage();
 }
 
 function setUninstallPage() {
   chrome.runtime.setUninstallURL("https://support.buffer.com");
 }
-
-chrome.runtime.onInstalled.addListener(function (details) {
-  if (details.reason === chrome.runtime.OnInstalledReason.INSTALL) {
-    chrome.tabs.create({
-      url: "https://support.buffer.com/article/653-buffer-browser-extension",
-    });
-  } else if (details.reason === chrome.runtime.OnInstalledReason.UPDATE) {
-    // Check if we've performed the migration from localStorage to chrome.storage.
-    chrome.storage.local.get("migrated", function (result) {
-      if (JSON.stringify(result) === "{}") {
-        chrome.windows.getCurrent({}, function (currentWindow) {
-          var popupWidth = Math.min(740, currentWindow.width);
-          var popupHeight = Math.min(700, currentWindow.height);
-          var popupLeft = Math.round((currentWindow.width - popupWidth) / 2);
-          var popupTop = Math.round((currentWindow.height - popupHeight) / 2);
-
-          // width and height set to 1 as we don't really need to show the user anything...
-          chrome.windows.create({
-            url: chrome.runtime.getURL("migration.html"),
-            type: "popup",
-            width: popupWidth,
-            height: popupHeight,
-            top: popupTop,
-            left: popupLeft,
-          });
-        });
-      } else {
-        setDefaultSettings();
-      }
-    });
-  }
-
-  init();
-});
 
 /* Key Commands
 –––––––––––––––––––––––––––––––––––––––––––––––––– */
@@ -237,6 +203,7 @@ async function openIdeasWithImage(info, tab) {
   });
 }
 
+// Handle context menu clicks
 chrome.contextMenus.onClicked.addListener(function (info, tab) {
   const { menuItemId, linkUrl, pageUrl } = info;
 
@@ -251,7 +218,8 @@ chrome.contextMenus.onClicked.addListener(function (info, tab) {
   if (menuItemId === "pageContextIdeas") return openIdeasWithTab(tab.id);
   if (menuItemId === "selectionContextIdeas")
     return openIdeasWithSelection(info);
-  if (menuItemId === "imageContextIdeas") return openIdeasWithImage(info, tab);
+  if (menuItemId === "imageContextIdeas")
+    return openIdeasWithImage(info, tab);
 });
 
 /* Inject

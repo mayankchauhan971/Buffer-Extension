@@ -22,22 +22,42 @@
     "default_icon": {
       "19": "icon19.png",
       "38": "icon38.png"
-    }
+    },
+    "default_popup": "popup.html"
   },
 
   "background": {
     "service_worker": "background.js"
   },
 
-  "permissions": ["tabs", "contextMenus", "scripting", "storage"],
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["content.js"]
+    }
+  ],
 
-  "host_permissions": ["http://*/*", "https://*/*"],
+  "permissions": [
+    "tabs",
+    "contextMenus",
+    "scripting",
+    "storage",
+    "activeTab"
+  ],
+
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*",
+    "https://jsonplaceholder.typicode.com/*"
+  ],
+
   "web_accessible_resources": [
     {
       "resources": ["*.png", "*.css", "*.svg"],
       "matches": ["http://*/*", "https://*/*"]
     }
   ],
+
   "commands": {
     "share-to-buffer-action": {
       "suggested_key": {
@@ -50,6 +70,7 @@
       "description": "Share to Buffer"
     }
   },
+
   "options_ui": {
     "page": "options.html"
   }
