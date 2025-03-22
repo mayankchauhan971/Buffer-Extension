@@ -5,7 +5,7 @@ import java.util.List;
 
 @Data
 public class OpenAIRequest {
-    private String model = "gpt-3.5-turbo";
+    private String model = "gpt-4";
     private List<Message> messages;
 
     @Data

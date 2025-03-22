@@ -22,8 +22,8 @@ public class ChatController {
 
     @PostMapping("/api/chat")
     public ChatResponse processChat(@RequestBody ChatRequest request) {
-        logger.info("Received chat request - URL: {}, SelectedText: {}, ChatId: {}, Prompt: {}", 
-            request.getUrl(), request.getSelectedText(), request.getChatId(), request.getPrompt());
+        logger.info("Received chat request - URL: {}, SelectedText: {}, ChatId: {}, Prompt: {}, Channels: {}", 
+            request.getUrl(), request.getSelectedText(), request.getChatId(), request.getPrompt(), request.getChannels());
         
         String chatId = request.getChatId();
         if (chatId == null || chatId.isEmpty()) {
@@ -35,7 +35,8 @@ public class ChatController {
                 request.getUrl(),
                 request.getSelectedText(),
                 chatId,
-                request.getPrompt()
+                request.getPrompt(),
+                request.getChannels()
         );
 
         ChatResponse chatResponse = new ChatResponse();

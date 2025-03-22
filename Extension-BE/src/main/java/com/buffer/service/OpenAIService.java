@@ -24,12 +24,23 @@ public class OpenAIService {
     private String appContext = "I have a small startup that helps small business collect, manage and analyze their reviews";
     private String targetAudience = "mostly small business owners";
     
-    private String getDefaultPrompt() {
+    private String getDefaultPrompt(List<String> channels) {
+        String channelsList = String.join(", ", channels);
         return "Go through this article and act as my content generation " + 
-               "assistant to help me ideate on what different types of content can I generate out of this give I'll be " + 
-               "publishing to Instagram, Facebook, LinkedIn and content for each channel should cater to audience specific " + 
-               "to them. Give me three ideas for each channel, from different angles which you feel will perform the " + 
-               "maximum along with why you think they'll perform the best. " + 
+               "assistant to help me ideate on what different types of content can I generate out of this. " +
+               "I'll be publishing to " + channelsList + " and content for each channel should cater to audience specific " + 
+               "to them. " +
+               "First, determine if you can generate meaningful content from the provided text. " +
+               "If you CAN generate content, start your response with: 'STATUS: SUCCESS' followed by the content. " +
+               "If you CANNOT generate content (e.g., if the text is empty, invalid, or insufficient), " +
+               "start your response with: 'STATUS: ERROR' followed by a brief explanation of why you couldn't generate content.\n\n" +
+               "For successful responses, please format your content exactly as follows for each channel:\n\n" +
+               "Channel: [Channel Name]\n" +
+               "Post 1: [Post content]\n" +
+               "Post 2: [Post content]\n" +
+               "Post 3: [Post content]\n\n" +
+               "Provide exactly 3 posts for each channel, with each post being a complete, ready-to-publish text. " +
+               "Make sure each post is tailored to the specific channel's audience and format requirements. " +
                "Context - " + appContext + " " + 
                "Target audience - " + targetAudience;
     }
@@ -53,14 +64,14 @@ public class OpenAIService {
         return UUID.randomUUID().toString();
     }
 
-    public String processRequest(String url, String selectedText, String chatId, String prompt) {
+    public String processRequest(String url, String selectedText, String chatId, String prompt, List<String> channels) {
         List<OpenAIRequest.Message> messages = chatHistory.computeIfAbsent(chatId, k -> new ArrayList<>());
         
         // For first-time users (no messages in history), add the default prompt
         if (messages.isEmpty()) {
             OpenAIRequest.Message systemMessage = new OpenAIRequest.Message();
             systemMessage.setRole("system");
-            systemMessage.setContent(getDefaultPrompt());
+            systemMessage.setContent(getDefaultPrompt(channels));
             messages.add(systemMessage);
         }
         

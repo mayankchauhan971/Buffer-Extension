@@ -1,6 +1,8 @@
 package com.buffer.model;
 
 import lombok.Data;
+import java.util.List;
+import java.util.Arrays;
 
 @Data
 public class ChatRequest {
@@ -8,4 +10,5 @@ public class ChatRequest {
     private String selectedText;
     private String chatId;
     private String prompt;
+    private List<String> channels = Arrays.asList("Instagram", "X", "Facebook");
 } 
