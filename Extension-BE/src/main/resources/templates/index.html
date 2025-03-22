@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Buffer Extension API</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+        }
+        code {
+            background-color: #f5f5f5;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        .endpoint {
+            background-color: #e8f4f8;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .method {
+            display: inline-block;
+            background-color: #2ecc71;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .url {
+            color: #2980b9;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Buffer Extension API</h1>
+        <p>Welcome to the Buffer Extension API service. This service provides an endpoint for processing URLs and selected text using OpenAI's GPT model.</p>
+
+        <h2>API Endpoint</h2>
+        <div class="endpoint">
+            <span class="method">POST</span>
+            <span class="url">/api/chat</span>
+        </div>
+
+        <h2>Request Body</h2>
+        <pre><code>{
+    "url": "https://example.com",
+    "selectedText": "Text to analyze",
+    "chatId": "" // Optional, will be generated if not provided
+}</code></pre>
+
+        <h2>Response</h2>
+        <pre><code>{
+    "chatId": "generated-chat-id",
+    "response": "OpenAI's response"
+}</code></pre>
+
+        <h2>Example Usage</h2>
+        <p>Using curl:</p>
+        <pre><code>curl -X POST http://localhost:8080/api/chat \
+-H "Content-Type: application/json" \
+-d '{
+    "url": "https://example.com",
+    "selectedText": "This is a sample text to analyze",
+    "chatId": ""
+}'</code></pre>
+
+        <h2>Features</h2>
+        <ul>
+            <li>Process URLs and selected text</li>
+            <li>Maintain conversation history using chatId</li>
+            <li>Powered by OpenAI's GPT model</li>
+            <li>RESTful API design</li>
+        </ul>
+
+        <h2>Notes</h2>
+        <ul>
+            <li>The service maintains chat history for each conversation using the chatId</li>
+            <li>If no chatId is provided, a new one will be generated</li>
+            <li>To continue a conversation, include the chatId from a previous response</li>
+        </ul>
+    </div>
+</body>
+</html> 
