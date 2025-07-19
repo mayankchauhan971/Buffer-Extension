@@ -1,0 +1,10 @@
+{
+    "extension_name": {
+        "message": "Buffer",
+        "description": "The display name for the extension."
+    },
+    "extension_description": {
+        "message": "Buffer is the best way to share great content to Social Networks from anywhere on the web.",
+        "description": "Description of what the extension does."
+    }
+}

@@ -17,6 +17,7 @@
   var site = {
     isGmail: /mail.google.com/.test(domain),
     isInstagram: /instagram.com/.test(domain),
+    isBluesky: /bsky.app/.test(domain),
   };
 
   // List of sites to disable this on:
@@ -83,7 +84,7 @@
 
   var menuWidth = 140;
   var menuButtonHeight = 28;
-  var menuBottom = menuButtonHeight * 3 + 38;
+  var menuBottom = menuButtonHeight * 2 + 38;
 
   var buttonMenu = document.createElement("div");
   buttonMenu.id = "buffer-extension-button-menu";
@@ -194,6 +195,14 @@
       extraYOffset = 4;
     }
 
+    // Bluesky iamges with an alt tag render a small [alt]
+    // badge which is around 14px wide, so we set to 24 to
+    // account for it + a bit of padding
+    if (site.isBluesky && image.getAttribute('alt').length > 0) {
+      extraXOffset = 22;
+      extraYOffset = -2;
+    }
+
     var x =
       window.pageXOffset +
       box.left +
@@ -260,7 +269,7 @@
   var bufferImage = function (e) {
     if (!currentImageUrl) return;
 
-    let title = getPageTitle();
+    let title = getImageAltTextAndPageTitle() || getPageTitle();
 
     e.preventDefault();
 
@@ -281,11 +290,11 @@
 
     e.preventDefault();
 
-    let title = getPageTitle();
+    let title = getImageAltTextAndPageTitle() || getPageTitle();
 
     const message = {
       data: {
-        media: currentImageUrl,
+        'media[]': currentImageUrl,
         text: title + " " + window.location.href,
         placement: "hover_button_image",
       },
@@ -333,6 +342,15 @@
       title = ogTitle.content;
     }
     return title;
+  }
+
+  function getImageAltTextAndPageTitle() {
+    if (image && image.alt && image.alt.length > 10) {
+      if (site.isBluesky) {
+        return `${image.alt} / ${getPageTitle()}`
+      }
+      return `${image.alt} (${getPageTitle()})`
+    }
   }
 
   var addBufferImageOverlays = function () {

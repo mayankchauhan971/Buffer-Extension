@@ -8,7 +8,7 @@
   "description": "__MSG_extension_description__",
   "homepage_url": "https://buffer.com",
 
-  "version": "6.0.10",
+  "version": "6.0.26",
 
   "icons": {
     "16": "icon16.png",
@@ -22,42 +22,26 @@
     "default_icon": {
       "19": "icon19.png",
       "38": "icon38.png"
-    },
-    "default_popup": "popup.html"
+    }
+  },
+
+  "side_panel": {
+    "default_path": "sidepanel.html"
   },
 
   "background": {
     "service_worker": "background.js"
   },
 
-  "content_scripts": [
-    {
-      "matches": ["http://*/*", "https://*/*"],
-      "js": ["content.js"]
-    }
-  ],
+  "permissions": ["tabs", "contextMenus", "scripting", "storage", "sidePanel"],
 
-  "permissions": [
-    "tabs",
-    "contextMenus",
-    "scripting",
-    "storage",
-    "activeTab"
-  ],
-
-  "host_permissions": [
-    "http://*/*",
-    "https://*/*",
-    "https://jsonplaceholder.typicode.com/*"
-  ],
-
+  "host_permissions": ["http://*/*", "https://*/*"],
   "web_accessible_resources": [
     {
       "resources": ["*.png", "*.css", "*.svg"],
       "matches": ["http://*/*", "https://*/*"]
     }
   ],
-
   "commands": {
     "share-to-buffer-action": {
       "suggested_key": {
@@ -70,7 +54,6 @@
       "description": "Share to Buffer"
     }
   },
-
   "options_ui": {
     "page": "options.html"
   }

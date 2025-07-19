@@ -1,25 +1,61 @@
 /* Initial Setup
 –––––––––––––––––––––––––––––––––––––––––––––––––– */
 
-// Initialize when the service worker is installed
-chrome.runtime.onInstalled.addListener(() => {
-  init();
-});
+init();
 
 function init() {
-  // Set the popup
-  chrome.action.setPopup({ popup: "popup.html" });
-  
-  // Initialize other components
+  // Set up action to open side panel
+  var action = chrome.action != null ? chrome.action : chrome.browserAction;
+  action.onClicked.addListener((tab) => {
+    chrome.sidePanel.open({ windowId: tab.windowId });
+  });
+
   setDefaultSettings();
+
   setContextMenus();
+
   setIcon();
+
   setUninstallPage();
 }
 
 function setUninstallPage() {
   chrome.runtime.setUninstallURL("https://support.buffer.com");
 }
+
+chrome.runtime.onInstalled.addListener(function (details) {
+  if (details.reason === chrome.runtime.OnInstalledReason.INSTALL) {
+    chrome.tabs.create({
+      url: "https://support.buffer.com/article/653-buffer-browser-extension",
+    });
+  } else if (details.reason === chrome.runtime.OnInstalledReason.UPDATE) {
+    // Check if we've performed the migration from localStorage to chrome.storage.
+    chrome.storage.local.get("migrated", function (result) {
+      if (JSON.stringify(result) === "{}") {
+        chrome.windows.getCurrent({}, function (currentWindow) {
+          var popupWidth = Math.min(740, currentWindow.width);
+          var popupHeight = Math.min(700, currentWindow.height);
+          var popupLeft = Math.round((currentWindow.width - popupWidth) / 2);
+          var popupTop = Math.round((currentWindow.height - popupHeight) / 2);
+
+          // width and height set to 1 as we don't really need to show the user anything...
+          chrome.windows.create({
+            url: chrome.runtime.getURL("migration.html"),
+            type: "popup",
+            width: popupWidth,
+            height: popupHeight,
+            top: popupTop,
+            left: popupLeft,
+          });
+        });
+      } else {
+        setDefaultSettings();
+      }
+    });
+  }
+
+  init();
+});
 
 /* Key Commands
 –––––––––––––––––––––––––––––––––––––––––––––––––– */
@@ -47,6 +83,12 @@ function setContextMenus() {
     contexts: ["page"],
   });
 
+  chrome.contextMenus.create({
+    title: "Brainstorm with AI",
+    id: "pageContextAI",
+    contexts: ["page"],
+  });
+
   // Selection
   chrome.contextMenus.create({
     title: "Create Post",
@@ -57,6 +99,12 @@ function setContextMenus() {
   chrome.contextMenus.create({
     title: "Save Idea",
     id: "selectionContextIdeas",
+    contexts: ["selection"],
+  });
+
+  chrome.contextMenus.create({
+    title: "Brainstorm with AI",
+    id: "selectionContextAI",
     contexts: ["selection"],
   });
 
@@ -76,6 +124,12 @@ function setContextMenus() {
   chrome.contextMenus.create({
     title: "Save Idea",
     id: "imageContextIdeas",
+    contexts: ["image"],
+  });
+
+  chrome.contextMenus.create({
+    title: "Brainstorm with AI",
+    id: "imageContextAI",
     contexts: ["image"],
   });
 }
@@ -190,7 +244,7 @@ async function openIdeasWithImage(info, tab) {
 
     const data = {
       text: text,
-      media: info.srcUrl,
+      'media[]': info.srcUrl,
     };
 
     var publishURL = new URL("https://publish.buffer.com/content/new");
@@ -203,7 +257,69 @@ async function openIdeasWithImage(info, tab) {
   });
 }
 
-// Handle context menu clicks
+// AI Brainstorm
+
+async function openAIBrainstormWithTab(tabId) {
+  const title = await getTabContent(tabId);
+
+  chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+    var tab = tabs[0];
+
+    const data = {
+      text: title,
+      url: tab.url,
+      source: "extension_ai_brainstorm",
+    };
+
+    var publishURL = new URL("https://publish.buffer.com/compose");
+    publishURL.search = new URLSearchParams(data);
+    chrome.tabs.create({
+      url:
+        "https://login.buffer.com/login?cta=browserExtension-button-1&redirect=" +
+        encodeURIComponent(publishURL.toString()),
+    });
+  });
+}
+
+function openAIBrainstormWithSelection(info) {
+  let composeRoute =
+    "https://publish.buffer.com/compose?text=" +
+    encodeURIComponent(info.selectionText) +
+    "&url=" +
+    encodeURIComponent(info.pageUrl) +
+    "&source=extension_ai_brainstorm";
+
+  chrome.tabs.create({
+    url:
+      "https://login.buffer.com/login?cta=browserExtension-button-1&redirect=" +
+      encodeURIComponent(composeRoute),
+  });
+}
+
+async function openAIBrainstormWithImage(info, tab) {
+  const title = await getTabContent(tab.id);
+
+  chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+    var tab = tabs[0];
+    let url = tab.url;
+
+    const data = {
+      text: title,
+      url: url,
+      picture: info.srcUrl,
+      source: "extension_ai_brainstorm",
+    };
+
+    var publishURL = new URL("https://publish.buffer.com/compose");
+    publishURL.search = new URLSearchParams(data);
+    chrome.tabs.create({
+      url:
+        "https://login.buffer.com/login?cta=browserExtension-button-1&redirect=" +
+        encodeURIComponent(publishURL.toString()),
+    });
+  });
+}
+
 chrome.contextMenus.onClicked.addListener(function (info, tab) {
   const { menuItemId, linkUrl, pageUrl } = info;
 
@@ -218,8 +334,13 @@ chrome.contextMenus.onClicked.addListener(function (info, tab) {
   if (menuItemId === "pageContextIdeas") return openIdeasWithTab(tab.id);
   if (menuItemId === "selectionContextIdeas")
     return openIdeasWithSelection(info);
-  if (menuItemId === "imageContextIdeas")
-    return openIdeasWithImage(info, tab);
+  if (menuItemId === "imageContextIdeas") return openIdeasWithImage(info, tab);
+
+  // AI Brainstorm
+  if (menuItemId === "pageContextAI") return openAIBrainstormWithTab(tab.id);
+  if (menuItemId === "selectionContextAI")
+    return openAIBrainstormWithSelection(info);
+  if (menuItemId === "imageContextAI") return openAIBrainstormWithImage(info, tab);
 });
 
 /* Inject
@@ -308,7 +429,7 @@ chrome.runtime.onMessage.addListener(function (message, sender) {
   const { action, data } = message;
 
   if (action === "PUBLISH") {
-    if (data["url"]) {
+    if (data["url"] && data.placement !== 'hover_button_image') {
       chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
         let tab = tabs[0];
         openPublishWithTab(tab.id);
@@ -326,7 +447,7 @@ chrome.runtime.onMessage.addListener(function (message, sender) {
     var tabId = data["tabId"];
     openPublishWithTab(tabId);
   } else if (action === "IDEA") {
-    if (data["url"]) {
+    if (data["url"] && data.placement !== 'hover_button_image') {
       chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
         let tab = tabs[0];
         openIdeasWithTab(tabId);
@@ -343,6 +464,9 @@ chrome.runtime.onMessage.addListener(function (message, sender) {
   } else if (action === "IDEASTAB") {
     var tabId = data["tabId"];
     openIdeasWithTab(tabId);
+  } else if (action === "AIBRAINSTORM") {
+    var tabId = data["tabId"];
+    openAIBrainstormWithTab(tabId);
   }
 });
 

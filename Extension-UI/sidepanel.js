@@ -12,6 +12,13 @@ $(document).ready(function() {
 			openIdeaComposer(tab.id);
 		});
 	});
+
+	$("#brainstorm-ai").click(function() {
+		chrome.tabs.query({ 'active': true, 'currentWindow': true }, function(tabs) {
+			let tab = tabs[0];
+			openAIBrainstorm(tab.id);
+		});
+	});
 	
 	function openPostComposer(tabId) {
 		const message = {
@@ -22,7 +29,7 @@ $(document).ready(function() {
 		}
 		
 		chrome.runtime.sendMessage(message, function() {
-			window.close();
+			// Side panel stays open, so we don't need to close anything
 		});
 	}
 	
@@ -35,7 +42,20 @@ $(document).ready(function() {
 		}
 		
 		chrome.runtime.sendMessage(message, function() {
-			window.close();
+			// Side panel stays open, so we don't need to close anything
 		});
 	}
-});
+
+	function openAIBrainstorm(tabId) {
+		const message = {
+		  data: {
+			tabId: tabId,
+		  },
+		  action: "AIBRAINSTORM"
+		}
+		
+		chrome.runtime.sendMessage(message, function() {
+			// Side panel stays open, so we don't need to close anything
+		});
+	}
+}); 

@@ -35,25 +35,25 @@ $(document).ready(function() {
    * Turn checkboxes on & off from localStorage based on their values
    */
   var checkboxes = $('input[type="checkbox"]').each(function() {
-    var $this = $(this);
-    var name = $this.attr('name');
+    const checkboxEl = $(this);
+    var name = checkboxEl.attr('name');
 
     if (name !== 'firefox-disable-data-collection') {
-      var val = $this.attr('value'),
+      var val = checkboxEl.attr('value'),
         key = 'buffer.op.' + val;
 
       chrome.storage.local.get(key, function(result) {
         if (result[key] === val || JSON.string(result[key]) === "{}") {
-          $this.attr('checked', true);
+          checkboxEl.attr('checked', true);
         } else {
-          $this.attr('checked', false);
+          checkboxEl.attr('checked', false);
         }
       });
       // Specific deserialization for this Firefox data collection setting
     } else {
       chrome.storage.local.get(['buffer.op.firefox-disable-data-collection'], function(result) {
-        if (result['buffer.op.firefox-disable-data-collection'] === 'yes') $this.attr('checked', true);
-        else $this.attr('checked', false);
+        if (result['buffer.op.firefox-disable-data-collection'] === 'yes') checkboxEl.attr('checked', true);
+        else checkboxEl.attr('checked', false);
       });
     }
 
@@ -63,13 +63,13 @@ $(document).ready(function() {
    * Turn radios on & off from localStorage based on their values
    */
   var radios = $('input[type="radio"]').each(function() {
-    var $this = $(this);
-    var key = 'buffer.op.' + $this.attr('name');
-    var val = $this.val();
+    const radioEl = $(this);
+    var key = 'buffer.op.' + radioEl.attr('name');
+    var val = radioEl.val();
 
     chrome.storage.local.get(key, function(result) {
       if (result[key] === val) {
-        $this.prop('checked', true);
+        radioEl.prop('checked', true);
       }
     });
   });
@@ -78,13 +78,14 @@ $(document).ready(function() {
    * Fill in text inputs from localStorage
    */
   var inputs = $('input[type="text"]').each(function() {
+    const inputEl = $(this);
 
-    var val = $(this).attr('placeholder'),
-      key = 'buffer.op.' + $(this).attr('name');
+    var val = inputEl.attr('placeholder'),
+      key = 'buffer.op.' + inputEl.attr('name');
 
-    chrome.storage.local.get(key, function(result) {
+    chrome.storage.local.get(key, (result) => {
       if (result[key] !== val) {
-        $(this).val(result[key]);
+        inputEl.val(result[key]);
       }
     });
   });
@@ -93,19 +94,21 @@ $(document).ready(function() {
    * Clean up the key combo
    */
   $('input[name="key-combo"]').change(function() {
-    var val = $(this)
+    const keyComboInput = $(this);
+    var val = keyComboInput
       .val()
       .trim()
       .toLowerCase()
       .replace(/[\s\,\&]/gi, '+') // Convert possible spacer characters to pluses
       .replace(/[^a-z0-9\+]/gi, ''); // Strip out almost everything else
-    $(this).val(val);
+    keyComboInput.val(val);
   });
 
   /**
    * Save it all
    */
   $('.submit').click(function(ev) {
+    const submitButton = $(this);
 
     ev.preventDefault();
 
@@ -121,10 +124,11 @@ $(document).ready(function() {
       keycombo.match(/^(((alt|shift|ctrl|command)\+)+([a-z0-9]{1}\+)*([a-z0-9]{1}))$/gi) === null) {
       // Indicate there's an error
       $('input[name="key-combo"]').addClass('error').one('change', function() {
-        $(this).removeClass("error");
+        const keyComboInput = $(this);
+        keyComboInput.removeClass("error");
       });
       // Wiggle the box
-      var button = $(this).addClass('wiggle');
+      var button = submitButton.addClass('wiggle');
       setTimeout(function() {
         $(button).removeClass('wiggle');
       }, 1500 * 0.15);
@@ -136,21 +140,21 @@ $(document).ready(function() {
 
     // Save the checkbox values based on their values
     $(checkboxes).each(function() {
-      var $this = $(this);
-      var name = $this.attr('name');
+      var checkboxEl = $(this);
+      var name = checkboxEl.attr('name');
 
       if (name !== 'firefox-disable-data-collection') {
-        var val = $this.attr('value'),
+        var val = checkboxEl.attr('value'),
           key = 'buffer.op.' + val;
 
-        if ($this.prop('checked')) {
+        if (checkboxEl.prop('checked')) {
           store[key] = val;
         } else {
           store[key] = false;
         }
         // Specific serialization for this Firefox data collection setting
       } else {
-        var settingValue = $this.prop('checked') ? 'yes' : 'no';
+        var settingValue = checkboxEl.prop('checked') ? 'yes' : 'no';
         store['buffer.op.firefox-disable-data-collection'] = settingValue;
       }
 
@@ -159,22 +163,23 @@ $(document).ready(function() {
     // Save the radio values based on their values
     $(radios)
       .filter(function() {
-        return $(this).is(':checked');
+        const radioEl = $(this);
+        return radioEl.is(':checked');
       })
       .each(function() {
-        var $this = $(this);
-        var key = 'buffer.op.' + $this.attr('name');
-        var val = $this.val();
+        var radioEl = $(this);
+        var key = 'buffer.op.' + radioEl.attr('name');
+        var val = radioEl.val();
 
         store[key] = val;
       });
 
     // Save the checkbox values based on their values
     $(inputs).each(function() {
-
-      var val = $(this).val(),
-        key = 'buffer.op.' + $(this).attr('name'),
-        placeholder = $(this).attr('placeholder');
+      const inputEl = $(this);
+      var val = inputEl.val(),
+        key = 'buffer.op.' + inputEl.attr('name'),
+        placeholder = inputEl.attr('placeholder');
 
       if (val !== placeholder) {
         if (val === '') val = placeholder;
@@ -185,7 +190,7 @@ $(document).ready(function() {
 
     chrome.storage.local.set(store, function() {
       // Indicate to the user that things went well
-      $(this).text('Saved').addClass("saved");
+      submitButton.text('Saved').addClass("saved");
 
       // Ask for a good review
       if (!localStorage.getItem('buffer.reviewed')) {
