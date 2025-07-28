@@ -34,4 +34,6 @@ build/
 
 ### Environment Variables ###
 .env
+.pem
 application-local.properties 
+application.properties 

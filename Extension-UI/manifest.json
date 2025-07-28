@@ -38,7 +38,7 @@
   "host_permissions": ["http://*/*", "https://*/*"],
   "web_accessible_resources": [
     {
-      "resources": ["*.png", "*.css", "*.svg"],
+      "resources": ["*.png", "*.css", "*.svg", "*.json", "sidepanel.html", "dist/*.js"],
       "matches": ["http://*/*", "https://*/*"]
     }
   ],

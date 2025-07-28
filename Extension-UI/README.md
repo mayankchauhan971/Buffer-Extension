@@ -18,6 +18,7 @@ The Buffer Safari Extension enhances your web browsing experience by providing s
   - TweetDeck
 - **Keyboard Shortcuts**: Configurable hotkeys for quick Buffer actions
 - **Hover Buttons**: Easily share images by hovering over them
+- **AI Brainstorm**: Interactive React Flow interface for brainstorming ideas
 - **Light/Dark Mode Support**: Adapts to your browser's theme
 - **Customizable Options**: Configure the extension behavior through the options page
 
@@ -35,7 +36,29 @@ The extension is designed to work on multiple browsers:
 
 - macOS (for Safari extension development)
 - Bash shell
+- Node.js and npm (for React Flow components)
 - Basic knowledge of web technologies (HTML, CSS, JavaScript)
+
+### Building React Flow Components
+
+This extension includes React Flow components for the AI brainstorming feature. To build these components:
+
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+2. Build for production:
+   ```bash
+   npm run build
+   ```
+
+3. Build for development (with watch mode):
+   ```bash
+   npm run dev
+   ```
+
+The built files will be placed in the `dist/` directory and are automatically referenced by `brainstorm.html`.
 
 ### Project Structure
 

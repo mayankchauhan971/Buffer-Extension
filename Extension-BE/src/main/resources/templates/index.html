@@ -4,9 +4,9 @@
     <title>Buffer Extension API</title>
     <style>
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             line-height: 1.6;
-            max-width: 800px;
+            max-width: 600px;
             margin: 0 auto;
             padding: 20px;
             color: #333;
@@ -15,7 +15,6 @@
             background-color: #f9f9f9;
             border-radius: 8px;
             padding: 20px;
-            margin-top: 20px;
         }
         h1 {
             color: #2c3e50;
@@ -24,88 +23,69 @@
         }
         h2 {
             color: #34495e;
-            margin-top: 30px;
-        }
-        code {
-            background-color: #f5f5f5;
-            padding: 2px 5px;
-            border-radius: 3px;
-            font-family: 'Courier New', Courier, monospace;
-        }
-        pre {
-            background-color: #f5f5f5;
-            padding: 15px;
-            border-radius: 5px;
-            overflow-x: auto;
+            margin-top: 25px;
         }
         .endpoint {
             background-color: #e8f4f8;
-            padding: 15px;
+            padding: 10px 15px;
             border-radius: 5px;
-            margin: 20px 0;
+            margin: 10px 0;
+            font-family: monospace;
         }
         .method {
-            display: inline-block;
             background-color: #2ecc71;
             color: white;
-            padding: 3px 8px;
+            padding: 2px 6px;
             border-radius: 3px;
             font-weight: bold;
             margin-right: 10px;
         }
-        .url {
-            color: #2980b9;
-            font-weight: bold;
+        .method.get {
+            background-color: #3498db;
+        }
+        ul {
+            margin: 10px 0;
+        }
+        li {
+            margin: 5px 0;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Buffer Extension API</h1>
-        <p>Welcome to the Buffer Extension API service. This service provides an endpoint for processing URLs and selected text using OpenAI's GPT model.</p>
+        
+        <p>A Spring Boot service that transforms webpage content into social media content ideas using AI. Designed to work with browser extensions for seamless content analysis.</p>
 
-        <h2>API Endpoint</h2>
+        <h2>Available Endpoints</h2>
+        
         <div class="endpoint">
-            <span class="method">POST</span>
-            <span class="url">/api/chat</span>
+            <span class="method">POST</span> /api/context
         </div>
+        <p>Analyzes webpage content and generates social media ideas for multiple platforms.</p>
 
-        <h2>Request Body</h2>
-        <pre><code>{
-    "url": "https://example.com",
-    "selectedText": "Text to analyze",
-    "chatId": "" // Optional, will be generated if not provided
-}</code></pre>
+        <div class="endpoint">
+            <span class="method get">GET</span> /api/monitor/database
+        </div>
+        <p>Returns database statistics and health information.</p>
 
-        <h2>Response</h2>
-        <pre><code>{
-    "chatId": "generated-chat-id",
-    "response": "OpenAI's response"
-}</code></pre>
+        <div class="endpoint">
+            <span class="method get">GET</span> /api/monitor/sessions
+        </div>
+        <p>Lists all content analysis sessions.</p>
 
-        <h2>Example Usage</h2>
-        <p>Using curl:</p>
-        <pre><code>curl -X POST http://localhost:8080/api/chat \
--H "Content-Type: application/json" \
--d '{
-    "url": "https://example.com",
-    "selectedText": "This is a sample text to analyze",
-    "chatId": ""
-}'</code></pre>
+        <div class="endpoint">
+            <span class="method get">GET</span> /api/monitor/session/{sessionId}
+        </div>
+        <p>Retrieves detailed information for a specific session.</p>
 
         <h2>Features</h2>
         <ul>
-            <li>Process URLs and selected text</li>
-            <li>Maintain conversation history using chatId</li>
-            <li>Powered by OpenAI's GPT model</li>
-            <li>RESTful API design</li>
-        </ul>
-
-        <h2>Notes</h2>
-        <ul>
-            <li>The service maintains chat history for each conversation using the chatId</li>
-            <li>If no chatId is provided, a new one will be generated</li>
-            <li>To continue a conversation, include the chatId from a previous response</li>
+            <li>AI-powered content generation using OpenAI GPT</li>
+            <li>Multi-platform social media ideas (Instagram, X, Facebook)</li>
+            <li>Session-based content tracking</li>
+            <li>Real-time monitoring and analytics</li>
+            <li>CORS-enabled for browser extension integration</li>
         </ul>
     </div>
 </body>

@@ -1,10 +1,6 @@
 /**
- * The options page is displayed within the browser's extensions page on Chrome
- * and Firefox, and needs less prominent styling then. The options page can
- * also be open as a separate tab though, and full styling is needed then. To enable
- * this workflow, we load a base stylesheet in all cases, that contains the complete
- * collection of styles, and we load a smaller stylesheet that overrides some of
- * those styles when the options page is embedded in a frame.
+ * Extension Options Page Controller
+ * Handles loading/saving extension settings and browser-specific adaptations
  */
 var isFramed = window.location.hash !== '#newtab';
 var framedStylesheet = document.querySelector('[data-use-when="framed"]');
@@ -17,22 +13,20 @@ $(document).ready(function() {
     location.protocol === 'safari-web-extension:' ? 'safari' : ''
   );
 
-  // Dynamically update page title and email subject
+  // Update page title and email link for current browser
   var hardcodedBrowserName = 'Chrome';
   var formattedCurrentBrowser = currentBrowser.substr(0, 1).toUpperCase() + currentBrowser.substr(1);
   document.title = document.title.replace(hardcodedBrowserName, formattedCurrentBrowser);
   var emailAnchor = document.getElementById('email-anchor');
   emailAnchor.href = emailAnchor.href.replace(hardcodedBrowserName, formattedCurrentBrowser);
 
-  /**
-   * Remove Firefox-specific option in other browsers
-   */
+  // Remove Firefox-specific option in other browsers
   if (currentBrowser !== 'firefox') {
     $('#firefox-data-collection').remove();
   }
 
   /**
-   * Turn checkboxes on & off from localStorage based on their values
+   * Load checkbox values from storage
    */
   var checkboxes = $('input[type="checkbox"]').each(function() {
     const checkboxEl = $(this);
@@ -49,18 +43,16 @@ $(document).ready(function() {
           checkboxEl.attr('checked', false);
         }
       });
-      // Specific deserialization for this Firefox data collection setting
     } else {
       chrome.storage.local.get(['buffer.op.firefox-disable-data-collection'], function(result) {
         if (result['buffer.op.firefox-disable-data-collection'] === 'yes') checkboxEl.attr('checked', true);
         else checkboxEl.attr('checked', false);
       });
     }
-
   });
 
   /**
-   * Turn radios on & off from localStorage based on their values
+   * Load radio button values from storage
    */
   var radios = $('input[type="radio"]').each(function() {
     const radioEl = $(this);
@@ -75,7 +67,7 @@ $(document).ready(function() {
   });
 
   /**
-   * Fill in text inputs from localStorage
+   * Load text input values from storage
    */
   var inputs = $('input[type="text"]').each(function() {
     const inputEl = $(this);
@@ -91,7 +83,7 @@ $(document).ready(function() {
   });
 
   /**
-   * Clean up the key combo
+   * Clean up keyboard shortcut format
    */
   $('input[name="key-combo"]').change(function() {
     const keyComboInput = $(this);
@@ -99,35 +91,29 @@ $(document).ready(function() {
       .val()
       .trim()
       .toLowerCase()
-      .replace(/[\s\,\&]/gi, '+') // Convert possible spacer characters to pluses
-      .replace(/[^a-z0-9\+]/gi, ''); // Strip out almost everything else
+      .replace(/[\s\,\&]/gi, '+')
+      .replace(/[^a-z0-9\+]/gi, '');
     keyComboInput.val(val);
   });
 
   /**
-   * Save it all
+   * Save all settings
    */
   $('.submit').click(function(ev) {
     const submitButton = $(this);
-
     ev.preventDefault();
 
     var keycombo = $('input[name="key-combo"]').val();
 
-    // Check the key combo
-    // The regex:
-    //
-    // starts with (one or more) of     alt / shift / ctrl / command and a plus
-    // then (zero or more) of           a-z / 0-9 (only one) and a plus
-    // then ends with                   a-z / 0-9 (only one)
+    // Validate key combo format
     if (keycombo.length > 0 &&
       keycombo.match(/^(((alt|shift|ctrl|command)\+)+([a-z0-9]{1}\+)*([a-z0-9]{1}))$/gi) === null) {
-      // Indicate there's an error
+      
       $('input[name="key-combo"]').addClass('error').one('change', function() {
         const keyComboInput = $(this);
         keyComboInput.removeClass("error");
       });
-      // Wiggle the box
+      
       var button = submitButton.addClass('wiggle');
       setTimeout(function() {
         $(button).removeClass('wiggle');
@@ -135,10 +121,9 @@ $(document).ready(function() {
       return;
     }
 
-
     var store = {};
 
-    // Save the checkbox values based on their values
+    // Save checkbox values
     $(checkboxes).each(function() {
       var checkboxEl = $(this);
       var name = checkboxEl.attr('name');
@@ -152,15 +137,13 @@ $(document).ready(function() {
         } else {
           store[key] = false;
         }
-        // Specific serialization for this Firefox data collection setting
       } else {
         var settingValue = checkboxEl.prop('checked') ? 'yes' : 'no';
         store['buffer.op.firefox-disable-data-collection'] = settingValue;
       }
-
     });
 
-    // Save the radio values based on their values
+    // Save radio values
     $(radios)
       .filter(function() {
         const radioEl = $(this);
@@ -174,7 +157,7 @@ $(document).ready(function() {
         store[key] = val;
       });
 
-    // Save the checkbox values based on their values
+    // Save text input values
     $(inputs).each(function() {
       const inputEl = $(this);
       var val = inputEl.val(),
@@ -185,14 +168,12 @@ $(document).ready(function() {
         if (val === '') val = placeholder;
         store[key] = val;
       }
-
     });
 
     chrome.storage.local.set(store, function() {
-      // Indicate to the user that things went well
       submitButton.text('Saved').addClass("saved");
 
-      // Ask for a good review
+      // Show review request
       if (!localStorage.getItem('buffer.reviewed')) {
         var webstoresCopy = {
           chrome: 'the <a class="fivestars" href="https://chrome.google.com/webstore/detail/buffer/noojglkidnpfjbincgijbaiedldjfbhh" target="_bank">Chrome Web Store</a>',
@@ -211,14 +192,14 @@ $(document).ready(function() {
   });
 
   /**
-   * Reset the save button
+   * Reset save button state when settings change
    */
   $('input').on('keyup click', function() {
     $('.submit').text('Save').removeClass("saved");
   });
 
   /**
-   * Store that the user has already been to the Web Store (:. we <3 them)
+   * Track review completion
    */
   $('body').on('click', '.fivestars', function() {
     localStorage.setItem('buffer.reviewed', 'true');
