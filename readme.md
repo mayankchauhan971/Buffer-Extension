@@ -58,11 +58,18 @@ We aim to assist SMM/SMB owners to save time in content creation by providing th
 ---
 
 ## How does this work? [Technical Side]
-![Architecture Screenshot](link-to-architecture-screenshot)
+<img width="699" height="511" alt="Screenshot 2025-09-01 at 3 37 17 AM" src="https://github.com/user-attachments/assets/4ff2fd4c-d51d-41a9-a601-995a93393f2f" />
 
-Retry Logic - Retrying 3 times with exponential backoff on particular error codes like Rate limit, Server errors and request timeouts.
+API: Uses OpenAI Responses API (/responses) via Spring WebClient. Model, temperature, base URL, and defaults are centralized in com.buffer.config.AIConstants.
 
-I'm a backend engineer with limited frontend knowledge and used LLM for coding UI. Backend is built in Java, language I'm most comfortable in.
+Structured output: We request JSON via text.format with type=json_schema, name=content_ideas_schema, and strict=true. The schema enforces:
+- status and summary
+- channels object with only requested channels
+- Each channel has an array of up to 3 ideas (idea, rationale, pros, cons) per AIConstants.IDEA_MAX_ITEMS.
+
+Retries: Exponential backoff with Reactor Retry.backoff, maxAttempts=3, initial delay 1s, max backoff 5s. Retries on 429 (rate limit), 500+ (server errors), and 408 (request timeout).
+
+I'm a backend engineer with limited frontend knowledge and used LLM for coding UI. Backend is built in Java, language I'm most comfortable in. Authentication flow is not implemented since Buffer no longer supports creation of new developer apps. [https://buffer.com/developers/api/oauth]
 
 ---
 
