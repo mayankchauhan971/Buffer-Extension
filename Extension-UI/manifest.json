@@ -1,0 +1,60 @@
+{
+"update_url": "https://clients2.google.com/service/update2/crx",
+
+  "manifest_version": 3,
+  "default_locale": "en",
+
+  "name": "__MSG_extension_name__",
+  "description": "__MSG_extension_description__",
+  "homepage_url": "https://buffer.com",
+
+  "version": "6.0.26",
+
+  "icons": {
+    "16": "icon16.png",
+    "32": "icon32.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+
+  "action": {
+    "default_title": "Share with Buffer",
+    "default_icon": {
+      "19": "icon19.png",
+      "38": "icon38.png"
+    }
+  },
+
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+
+  "background": {
+    "service_worker": "background.js"
+  },
+
+  "permissions": ["tabs", "contextMenus", "scripting", "storage", "sidePanel"],
+
+  "host_permissions": ["http://*/*", "https://*/*"],
+  "web_accessible_resources": [
+    {
+      "resources": ["*.png", "*.css", "*.svg", "*.json", "sidepanel.html", "dist/*.js"],
+      "matches": ["http://*/*", "https://*/*"]
+    }
+  ],
+  "commands": {
+    "share-to-buffer-action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+B",
+        "windows": "Ctrl+Shift+B",
+        "mac": "Command+Shift+B",
+        "chromeos": "Ctrl+Shift+B",
+        "linux": "Ctrl+Shift+B"
+      },
+      "description": "Share to Buffer"
+    }
+  },
+  "options_ui": {
+    "page": "options.html"
+  }
+}

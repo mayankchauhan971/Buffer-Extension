@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="format-detection" content="telephone=no" />
+    <script src="jquery-3.6.0.min.js"></script>
+    <!-- Load React Flow bundle first -->
+    <script src="dist/vendors.bundle.js"></script>
+    <script src="dist/sidepanel-brainstorm.bundle.js"></script>
+    <script src="sidepanel.js"></script>
+    <link
+      href="http://fonts.googleapis.com/css?family=Roboto"
+      rel="stylesheet"
+      type="text/css"
+    />
+
+    <style>
+      html,
+      body {
+        width: 100%;
+        height: 100vh;
+        background: #fff;
+        text-align: center;
+        margin: 0;
+        padding: 0;
+        font-family: "Roboto", sans-serif;
+        font-size: 12px;
+        overflow-x: hidden;
+      }
+
+      .container {
+        margin: 24px 16px 16px 16px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: calc(100vh - 48px);
+      }
+
+      h1 {
+        color: #000;
+        font-size: 18px;
+        padding-bottom: 16px;
+        margin: 0 !important;
+      }
+
+      .btn {
+        display: block;
+        height: 48px;
+        -webkit-border-radius: 4px;
+        -moz-border-radius: 4px;
+        border-radius: 4px;
+        text-decoration: none;
+        line-height: 48px;
+        font-size: 16px;
+        margin-bottom: 12px;
+        cursor: pointer;
+        width: 100%;
+        box-sizing: border-box;
+      }
+
+      .btn.primary {
+        background: #2c4bff;
+        color: #fff;
+      }
+
+      .btn.secondary {
+        border: 1px solid #b8b8b8;
+        color: #636363;
+      }
+
+      .buffer {
+        background: url("buffer-logo.svg") no-repeat;
+        width: 50px;
+        height: 12px;
+        display: block;
+        margin: 24px auto 0;
+        clear: both;
+      }
+
+      .brainstorm-container {
+        width: 100%;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .brainstorm-header {
+        display: flex;
+        align-items: center;
+        padding: 16px;
+        border-bottom: 1px solid #e0e0e0;
+        background: #fff;
+        position: relative;
+      }
+
+      .back-btn {
+        background: none;
+        border: none;
+        font-size: 16px;
+        cursor: pointer;
+        color: #2c4bff;
+        padding: 8px;
+        border-radius: 4px;
+        margin-right: 12px;
+      }
+
+      .back-btn:hover {
+        background: #f5f5f5;
+      }
+
+      .brainstorm-header h2 {
+        margin: 0;
+        font-size: 18px;
+        color: #000;
+      }
+
+      #brainstorm-root {
+        flex: 1;
+        width: 100%;
+        height: calc(100vh - 70px);
+        overflow: hidden;
+        position: relative;
+      }
+
+      /* Simple ReactFlow styling */
+      .react-flow {
+        width: 100% !important;
+        height: 100% !important;
+      }
+
+      .react-flow__pane {
+        cursor: grab !important;
+      }
+
+      .react-flow__pane.dragging {
+        cursor: grabbing !important;
+      }
+
+      /* Ensure zoom controls are visible */
+      .react-flow__controls {
+        z-index: 1000 !important;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- Main Menu View -->
+    <div class="container" id="main-view">
+      <h1>What would you like to do?</h1>
+      <a href="#" class="btn primary" id="create-post">Create Post</a>
+      <a href="#" class="btn secondary" id="create-contentIdea">Save Idea</a>
+      <a href="#" class="btn secondary" id="brainstorm-ai">Brainstorm with AI</a>
+
+      <a href="https://publish.buffer.com" target="_blank" class="buffer"></a>
+    </div>
+
+    <!-- Brainstorm View -->
+    <div class="brainstorm-container" id="brainstorm-view" style="display: none;">
+      <div class="brainstorm-header">
+        <button id="back-button" class="back-btn">← Back</button>
+        <h2>Brainstorm with AI</h2>
+      </div>
+      <div id="brainstorm-root"></div>
+    </div>
+  </body>
+</html> 
