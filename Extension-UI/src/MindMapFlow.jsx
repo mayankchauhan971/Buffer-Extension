@@ -45,9 +45,6 @@ const MindMapFlowContent = ({ data }) => {
     setSummaryHeight(height);
   }, []);
   
-  /**
-   * Toggle socialMediaChannel expansion - only one socialMediaChannel can be expanded at a time
-   */
   const toggleChannel = useCallback((socialMediaChannel) => {
     setExpandedChannels(prev => {
       const newSet = new Set();
@@ -55,7 +52,6 @@ const MindMapFlowContent = ({ data }) => {
       if (!prev.has(socialMediaChannel)) {
         newSet.add(socialMediaChannel);
         
-        // Center on the expanded socialMediaChannel
         setTimeout(() => {
           if (reactFlowInstance) {
             const channelNode = reactFlowInstance.getNode(`socialMediaChannel-${socialMediaChannel}`);
@@ -76,7 +72,6 @@ const MindMapFlowContent = ({ data }) => {
           }
         }, 100);
       } else {
-        // When collapsing socialMediaChannel, fit the entire view
         setTimeout(() => {
           if (reactFlowInstance) {
             reactFlowInstance.fitView({ 
@@ -94,9 +89,6 @@ const MindMapFlowContent = ({ data }) => {
     });
   }, [reactFlowInstance]);
 
-  /**
-   * Generate nodes and edges based on data and expanded state
-   */
   const { nodes, edges } = useMemo(() => {
     const nodes = [];
     const edges = [];
@@ -115,7 +107,6 @@ const MindMapFlowContent = ({ data }) => {
     const channelGap = 20;
     const channelsY = summaryPosition.y + summaryHeight + channelGap;
     
-    // Summary node
     nodes.push({
       id: 'summary',
       type: 'summary',
@@ -128,7 +119,6 @@ const MindMapFlowContent = ({ data }) => {
       draggable: true,
     });
     
-    // Channel nodes
     channels.forEach((socialMediaChannel, channelIndex) => {
       const isExpanded = expandedChannels.has(socialMediaChannel);
       
@@ -161,7 +151,6 @@ const MindMapFlowContent = ({ data }) => {
         style: { stroke: '#2c4bff', strokeWidth: 2 },
       });
 
-      // Add contentIdea nodes if socialMediaChannel is expanded
       if (isExpanded) {
         const channelIdeas = data.channels[socialMediaChannel] || [];
         const ideasToShow = channelIdeas.slice(0, 3);

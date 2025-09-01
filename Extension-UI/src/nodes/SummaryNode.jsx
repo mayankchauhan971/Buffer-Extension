@@ -20,7 +20,6 @@ const SummaryNode = ({ data, id }) => {
     });
   };
   
-  // Calculate node height based on content
   const baseHeight = 90;
   const lineHeight = 24;
   const charsPerLine = Math.floor((nodeWidth - 32) / 10);
@@ -59,7 +58,6 @@ const SummaryNode = ({ data, id }) => {
         e.target.style.borderColor = '#e9ecef';
       }}
     >
-      {/* Header */}
       <div style={{
         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
         color: 'white',
@@ -74,7 +72,6 @@ const SummaryNode = ({ data, id }) => {
         📋 Webpage Summary
       </div>
 
-      {/* Summary Content */}
       <div style={{
         fontSize: '14px',
         lineHeight: '1.5',
@@ -85,7 +82,6 @@ const SummaryNode = ({ data, id }) => {
         {summary}
       </div>
 
-      {/* Connection handles for React Flow */}
       <Handle
         type="source"
         position={Position.Top}

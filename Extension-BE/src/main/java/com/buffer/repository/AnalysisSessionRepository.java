@@ -6,11 +6,7 @@ import java.util.Map;
 
 /**
  * Repository interface for managing AnalysisSession persistence.
- * This abstraction allows for multiple storage implementations:
- * - In-memory (current)
- * - Database (JPA/Hibernate)
- * - Redis cache
- * - File-based storage
+ * This abstraction allows for multiple storage implementations like DB, Cache, etc
  */
 public interface AnalysisSessionRepository {
     
@@ -32,16 +28,5 @@ public interface AnalysisSessionRepository {
      * @return List of all sessions (useful for monitoring/admin purposes)
      */
     List<AnalysisSession> getAllSessions();
-    
-    /**
-     * Get repository statistics and metadata
-     * @return Map containing stats like total sessions, recent activity, etc.
-     */
-    Map<String, Object> getRepositoryStats();
-    
-    /**
-     * Remove sessions that exceed storage limits or are too old
-     * Implementation-specific cleanup strategy
-     */
-    void performCleanup();
 }
+

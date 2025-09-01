@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import MindMapFlow from './MindMapFlow';
 import BouncingLoader from './BouncingLoader';
 
-// Development mode toggle - set to true to use mock response instead of API
 const DEVELOPMENT_MODE = false;
 
 const API_CONFIG = {
@@ -14,9 +13,6 @@ const API_CONFIG = {
   timeout: 40000,
 };
 
-/**
- * Load mock response for development mode
- */
 const loadMockResponse = async () => {
   try {
     const response = await fetch(chrome.runtime.getURL('mock-response.json'));
@@ -27,20 +23,13 @@ const loadMockResponse = async () => {
   }
 };
 
-/**
- * Main brainstorm flow component that handles API calls and displays results
- */
 function SidepanelBrainstormFlow({ pageContent, cachedApiResponse = null, forceRefresh = false }) {
   const [apiStatus, setApiStatus] = useState(cachedApiResponse && !forceRefresh ? 'success' : 'idle'); 
   const [apiResponse, setApiResponse] = useState(forceRefresh ? null : cachedApiResponse);
   const [apiError, setApiError] = useState(null);
   
-  // Track the current request's AbortController for cleanup and timeout
   const currentRequestRef = useRef(null);
 
-  /**
-   * Internal function to cancel ongoing requests during cleanup
-   */
   const cancelCurrentRequest = () => {
     if (currentRequestRef.current) {
       console.log('Cancelling API request during cleanup');
@@ -49,9 +38,6 @@ function SidepanelBrainstormFlow({ pageContent, cachedApiResponse = null, forceR
     }
   };
 
-  /**
-   * Create payload for context API
-   */
   const createContentPayload = (content) => {
     return {
       title: content.title || '',
@@ -63,12 +49,8 @@ function SidepanelBrainstormFlow({ pageContent, cachedApiResponse = null, forceR
     };
   };
 
-  /**
-   * Call the context API endpoint
-   */
   const callContextEndpoint = async (content) => {
     try {
-      // Cancel any existing request before starting a new one
       cancelCurrentRequest();
 
       setApiStatus('calling');
@@ -78,14 +60,12 @@ function SidepanelBrainstormFlow({ pageContent, cachedApiResponse = null, forceR
       let result;
       
       if (DEVELOPMENT_MODE) {
-        // Use mock response in development mode with artificial delay
         const controller = new AbortController();
-        currentRequestRef.current = controller; // Store reference for cleanup
+        currentRequestRef.current = controller;
         
         const delayPromise = new Promise((resolve, reject) => {
-          const timeoutId = setTimeout(resolve, 5000); // 5 second delay
+          const timeoutId = setTimeout(resolve, 5000);
           
-          // Handle abort signal
           controller.signal.addEventListener('abort', () => {
             clearTimeout(timeoutId);
             reject(new Error('AbortError'));
@@ -98,11 +78,9 @@ function SidepanelBrainstormFlow({ pageContent, cachedApiResponse = null, forceR
         ]);
         result = mockResult;
       } else {
-        // Make actual API call in production mode
         const controller = new AbortController();
-        currentRequestRef.current = controller; // Store reference for timeout and cleanup
+        currentRequestRef.current = controller;
         
-        // Set timeout to abort request
         const timeoutId = setTimeout(() => {
           controller.abort();
         }, API_CONFIG.timeout);
@@ -124,13 +102,11 @@ function SidepanelBrainstormFlow({ pageContent, cachedApiResponse = null, forceR
         result = await response.json();
       }
      
-      // Clear the request reference since it completed successfully
       currentRequestRef.current = null;
       
       setApiStatus('success');
       setApiResponse(result);
       
-      // Cache the API response
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         if (tabs[0]) {
           chrome.runtime.sendMessage({
@@ -145,10 +121,8 @@ function SidepanelBrainstormFlow({ pageContent, cachedApiResponse = null, forceR
       });
       
     } catch (error) {
-      // Clear the request reference
       currentRequestRef.current = null;
       
-      // Handle AbortError (timeout only, since no user cancellation from UI)
       if (error.name === 'AbortError') {
         console.log('Request timed out after', API_CONFIG.timeout / 1000, 'seconds');
         setApiStatus('error');
@@ -168,23 +142,18 @@ function SidepanelBrainstormFlow({ pageContent, cachedApiResponse = null, forceR
       }
       
       if (cachedApiResponse && !forceRefresh) {
-        // Using cached response
       } else {
         callContextEndpoint(pageContent);
       }
     }
   }, [pageContent, cachedApiResponse, forceRefresh]);
 
-  // Cleanup: Cancel any pending request when component unmounts
   useEffect(() => {
     return () => {
       cancelCurrentRequest();
     };
   }, []);
 
-  /**
-   * Render content based on current API status
-   */
   const renderContent = () => {
     switch (apiStatus) {
       case 'calling':
