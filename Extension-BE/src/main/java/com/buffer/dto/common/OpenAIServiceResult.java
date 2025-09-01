@@ -1,4 +1,4 @@
-package com.buffer.dto;
+package com.buffer.dto.common;
 
 /**
  * Result wrapper for OpenAI analysis operations.
@@ -34,14 +34,7 @@ public class OpenAIServiceResult {
     public String getErrorMessage() {
         return errorMessage;
     }
-
-    public String getStatus() {
-        return success ? "SUCCESS" : "FAILURE";
-    }
-
-    public String getMessage() {
-        return success ? "Analysis completed successfully" : errorMessage;
-    }
 }
+
 
 

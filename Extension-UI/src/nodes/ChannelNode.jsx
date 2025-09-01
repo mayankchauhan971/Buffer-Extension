@@ -1,10 +1,9 @@
 import React from 'react';
 import { Handle, Position, useReactFlow } from '@xyflow/react';
 
-// Define consistent center position for all nodes
 const DEFAULT_CENTER_POSITION = {
-  x: -100,  // Horizontal center
-  y: -150  // Slightly above screen center for better visual appearance
+  x: -100,
+  y: -150
 };
 
 const ChannelNode = ({ data, id }) => {
@@ -14,7 +13,6 @@ const ChannelNode = ({ data, id }) => {
   const handleClick = (e) => {
     e.stopPropagation();
     
-    // Center this node at the consistent default position
     const currentZoom = getZoom();
     
     setCenter(
@@ -22,11 +20,10 @@ const ChannelNode = ({ data, id }) => {
       DEFAULT_CENTER_POSITION.y,
       { 
         duration: 600,
-        zoom: currentZoom // Explicitly preserve current zoom
+        zoom: currentZoom
       }
     );
     
-    // Then toggle the socialMediaChannel
     if (onToggle) {
       onToggle(socialMediaChannel);
     }
@@ -73,7 +70,6 @@ const ChannelNode = ({ data, id }) => {
         }
       }}
     >
-      {/* Channel Icon and Name */}
       <div style={{
         display: 'flex',
         alignItems: 'center',
@@ -81,16 +77,9 @@ const ChannelNode = ({ data, id }) => {
         gap: '8px'
       }}>
         <span>{socialMediaChannel.charAt(0).toUpperCase() + socialMediaChannel.slice(1)}</span>
-        {/* <span style={{ 
-          fontSize: '12px',
-          transition: 'transform 0.2s ease',
-          transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)'
-        }}>
-          ▶
-        </span> */}
+
       </div>
 
-      {/* Status Indicator */}
       {isExpanded && (
         <div style={{
           position: 'absolute',
@@ -105,7 +94,6 @@ const ChannelNode = ({ data, id }) => {
         }} />
       )}
 
-      {/* Connection Handles - Only top and bottom with specific IDs */}
       <Handle
         type="target"
         position={Position.Top}
@@ -127,7 +115,6 @@ const ChannelNode = ({ data, id }) => {
         }}
       />
 
-      {/* Source handles for when expanded - for outgoing edges to ideas */}
       {isExpanded && (
         <>
           <Handle
