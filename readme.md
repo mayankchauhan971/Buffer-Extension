@@ -1,16 +1,13 @@
 # Content Ideation Copilot – Chrome Extension
 
 ## TL;DR
-Content ideation is hard because creativity isn’t constant—it surges and stalls.
+Content ideation is hard because creativity isn’t constant—it surges and stalls. What if ideation were effortless—a copilot that, with one click on any page or article, generates multiple socialMediaChannel-specific ideas (not finished posts) with clear rationale, pros and cons, and the option to expand any contentIdea into a polished post—each tailored to brand voice and goals and delivered straight into Buffer for scheduling and collaboration.
 
-**What if ideation were effortless—a copilot that, with one click on any page or article, generates multiple socialMediaChannel-specific ideas (not finished posts) with clear rationale, pros and cons, and the option to expand any contentIdea into a polished post—each tailored to brand voice and goals and delivered straight into Buffer for scheduling and collaboration.**
-
-Welcome to a mini-project crafted to help me be considered for an interview at Buffer:  
-**a Content Ideation Copilot Chrome extension.**
+Welcome to a mini-project crafted to help me be considered for an interview at Buffer:  **a Content Ideation Copilot Chrome extension.**
 
 ---
 
-### 🎥 Demo Video
+### Demo Video
 Demo Link -
 https://www.loom.com/share/705df813dd074a19a6bd716e6f80aa47?sid=63f62595-4260-4443-b484-338e96169017
 
@@ -26,7 +23,7 @@ I think current Buffer users can be grouped in 2 buckets:
 
 ---
 
-### **How does the current process look like?**
+### **How does the current content creation process look like?**
 
 - **Push (inspiration-driven):**  
   See a reel/post/article while browsing → capture the reference and a rough note → save as an Idea for later.
@@ -58,7 +55,8 @@ We aim to assist SMM/SMB owners to save time in content creation by providing th
 ---
 
 ## How does this work? [Technical Side]
-<img width="699" height="511" alt="Screenshot 2025-09-01 at 3 37 17 AM" src="https://github.com/user-attachments/assets/4ff2fd4c-d51d-41a9-a601-995a93393f2f" />
+<img width="811" height="505" alt="Screenshot 2025-09-01 at 7 43 52 PM" src="https://github.com/user-attachments/assets/22b8de3f-b3de-4d1b-bf4b-82768e362273" />
+
 
 API: Uses OpenAI Responses API (/responses) via Spring WebClient. Model, temperature, base URL, and defaults are centralized in com.buffer.config.AIConstants.
 
@@ -69,7 +67,11 @@ Structured output: We request JSON via text.format with type=json_schema, name=c
 
 Retries: Exponential backoff with Reactor Retry.backoff, maxAttempts=3, initial delay 1s, max backoff 5s. Retries on 429 (rate limit), 500+ (server errors), and 408 (request timeout).
 
-I'm a backend engineer with limited frontend knowledge and used LLM for coding UI. Backend is built in Java, language I'm most comfortable in. Authentication flow is not implemented since Buffer no longer supports creation of new developer apps. [https://buffer.com/developers/api/oauth]
+Storage: Repository layer follows repository pattern, currently using an in-mem DB which can be swapped for any DB, cache, etc.
+
+Monitoring: The Monitoring controller interacts and exposes storage methods, mainly for debugging purposes, currently.
+
+I'm a backend engineer with limited frontend knowledge and used LLM for coding UI. Backend is built in Java, language I'm most comfortable in. Authentication flow is not implemented since Buffer no longer supports the creation of new developer apps. [https://buffer.com/developers/api/oauth]
 
 ---
 
@@ -86,4 +88,4 @@ Video on my rationale and small introduction - https://www.loom.com/share/705df8
 
 ---
 
-This is V0 — if things work fine, maybe I can build this at Buffer :)  
+This is V0 — if things work out, maybe I can build this at Buffer :)  
