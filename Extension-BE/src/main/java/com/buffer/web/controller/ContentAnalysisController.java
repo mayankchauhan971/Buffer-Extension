@@ -1,7 +1,7 @@
-package com.buffer.controller;
+package com.buffer.web.controller;
 
-import com.buffer.dto.request.ContentAnalysisRequest;
-import com.buffer.dto.response.ContentAnalysisResponse;
+import com.buffer.domain.dto.request.ContentAnalysisRequest;
+import com.buffer.domain.dto.response.ContentAnalysisResponse;
 import com.buffer.service.ContentAnalysisService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

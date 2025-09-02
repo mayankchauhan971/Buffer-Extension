@@ -1,9 +1,9 @@
-package com.buffer.controller;
+package com.buffer.web.controller;
 
-import com.buffer.dto.response.DatabaseHealthResponse;
-import com.buffer.dto.response.SessionDataResponse;
-import com.buffer.dto.response.SessionsListResponse;
-import com.buffer.entity.*;
+import com.buffer.domain.dto.response.DatabaseHealthResponse;
+import com.buffer.domain.dto.response.SessionDataResponse;
+import com.buffer.domain.dto.response.SessionsListResponse;
+import com.buffer.domain.entity.*;
 import com.buffer.service.ContentAnalysisService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
