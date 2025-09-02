@@ -1,4 +1,4 @@
-package com.buffer.dto.request;
+package com.buffer.domain.dto.request;
 
 import lombok.Data;
 import java.util.List;
@@ -6,7 +6,7 @@ import java.util.List;
 /**
  * Content Analysis Request DTO
  *
- * Data transfer object representing a request for content analysis from browser extensions
+ * DTO representing a request for content analysis from browser extensions
  * or client applications. Contains webpage metadata (title, description, URL), extracted
  * content (full text, headings), and optional channel preferences for targeted social
  * media idea generation.

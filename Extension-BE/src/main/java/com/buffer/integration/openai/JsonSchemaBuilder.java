@@ -2,6 +2,8 @@ package com.buffer.integration.openai;
 
 import java.util.*;
 
+import static com.buffer.domain.dto.common.IdeaDetailDto.*;
+
 /**
  * Builder class for constructing JSON Schema definitions for OpenAI structured outputs.
  * 
@@ -9,6 +11,22 @@ import java.util.*;
  * and reusable components. Specifically designed for OpenAI's structured output format.
  */
 public class JsonSchemaBuilder {
+    
+    // JSON Schema field constants
+    private static final String FIELD_TYPE = "type";
+    private static final String FIELD_ENUM = "enum";
+    private static final String FIELD_ITEMS = "items";
+    private static final String FIELD_PROPERTIES = "properties";
+    private static final String FIELD_REQUIRED = "required";
+    private static final String FIELD_ADDITIONAL_PROPERTIES = "additionalProperties";
+    private static final String FIELD_MIN_ITEMS = "minItems";
+    private static final String FIELD_MAX_ITEMS = "maxItems";
+    
+    // JSON Schema type constants
+    private static final String TYPE_OBJECT = "object";
+    private static final String TYPE_STRING = "string";
+    private static final String TYPE_ARRAY = "array";
+    
     private final Map<String, Object> schema;
     private final Map<String, Object> properties;
     private final List<String> required;
@@ -19,8 +37,8 @@ public class JsonSchemaBuilder {
         this.required = new ArrayList<>();
         
         // Set defaults for OpenAI structured output
-        this.schema.put("type", "object");
-        this.schema.put("additionalProperties", false);
+        this.schema.put(FIELD_TYPE, TYPE_OBJECT);
+        this.schema.put(FIELD_ADDITIONAL_PROPERTIES, false);
     }
     
     /**
@@ -35,10 +53,10 @@ public class JsonSchemaBuilder {
      */
     public JsonSchemaBuilder addStringProperty(String name, boolean required, String... enumValues) {
         Map<String, Object> property = new HashMap<>();
-        property.put("type", "string");
+        property.put(FIELD_TYPE, TYPE_STRING);
         
         if (enumValues.length > 0) {
-            property.put("enum", Arrays.asList(enumValues));
+            property.put(FIELD_ENUM, Arrays.asList(enumValues));
         }
         
         properties.put(name, property);
@@ -60,8 +78,8 @@ public class JsonSchemaBuilder {
      */
     public JsonSchemaBuilder addArrayProperty(String name, Map<String, Object> itemSchema, boolean required) {
         Map<String, Object> property = new HashMap<>();
-        property.put("type", "array");
-        property.put("items", itemSchema);
+        property.put(FIELD_TYPE, TYPE_ARRAY);
+        property.put(FIELD_ITEMS, itemSchema);
         
         properties.put(name, property);
         if (required) {
@@ -74,39 +92,21 @@ public class JsonSchemaBuilder {
      * Add an array property with string items
      */
     public JsonSchemaBuilder addStringArrayProperty(String name, boolean required) {
-        return addArrayProperty(name, Map.of("type", "string"), required);
+        return addArrayProperty(name, Map.of(FIELD_TYPE, TYPE_STRING), required);
     }
-    
-    /**
-     * Add an array property with constraints
-     */
-    public JsonSchemaBuilder addArrayProperty(String name, Map<String, Object> itemSchema, 
-                                            boolean required, int minItems, int maxItems) {
-        Map<String, Object> property = new HashMap<>();
-        property.put("type", "array");
-        property.put("items", itemSchema);
-        property.put("minItems", minItems);
-        property.put("maxItems", maxItems);
-        
-        properties.put(name, property);
-        if (required) {
-            this.required.add(name);
-        }
-        return this;
-    }
-    
+
     /**
      * Add an object property with dynamic properties
      */
     public JsonSchemaBuilder addObjectProperty(String name, Map<String, Object> objectProperties, 
                                              List<String> requiredFields, boolean required) {
         Map<String, Object> property = new HashMap<>();
-        property.put("type", "object");
-        property.put("additionalProperties", false);
-        property.put("properties", objectProperties);
+        property.put(FIELD_TYPE, TYPE_OBJECT);
+        property.put(FIELD_ADDITIONAL_PROPERTIES, false);
+        property.put(FIELD_PROPERTIES, objectProperties);
         
         if (requiredFields != null && !requiredFields.isEmpty()) {
-            property.put("required", requiredFields);
+            property.put(FIELD_REQUIRED, requiredFields);
         }
         
         properties.put(name, property);
@@ -115,32 +115,10 @@ public class JsonSchemaBuilder {
         }
         return this;
     }
-    
-    /**
-     * Add a custom property with full control
-     */
-    public JsonSchemaBuilder addProperty(String name, Map<String, Object> propertyDefinition, boolean required) {
-        properties.put(name, new HashMap<>(propertyDefinition));
-        if (required) {
-            this.required.add(name);
-        }
-        return this;
-    }
-    
-    /**
-     * Set additional schema properties
-     */
-    public JsonSchemaBuilder setAdditionalProperties(boolean allow) {
-        schema.put("additionalProperties", allow);
-        return this;
-    }
-    
-    /**
-     * Build the final schema
-     */
+
     public Map<String, Object> build() {
-        schema.put("properties", new HashMap<>(properties));
-        schema.put("required", new ArrayList<>(required));
+        schema.put(FIELD_PROPERTIES, new HashMap<>(properties));
+        schema.put(FIELD_REQUIRED, new ArrayList<>(required));
         return new HashMap<>(schema);
     }
     
@@ -151,10 +129,10 @@ public class JsonSchemaBuilder {
      */
     public static Map<String, Object> createIdeaItemSchema() {
         return JsonSchemaBuilder.create()
-            .addStringProperty("idea")
-            .addStringProperty("rationale")
-            .addStringArrayProperty("pros", true)
-            .addStringArrayProperty("cons", true)
+            .addStringProperty(FIELD_IDEA)
+            .addStringProperty(FIELD_RATIONALE)
+            .addStringArrayProperty(FIELD_PROS, true)
+            .addStringArrayProperty(FIELD_CONS, true)
             .build();
     }
     
@@ -163,10 +141,10 @@ public class JsonSchemaBuilder {
      */
     public static Map<String, Object> createIdeaArraySchema(int minItems, int maxItems) {
         Map<String, Object> arraySchema = new HashMap<>();
-        arraySchema.put("type", "array");
-        arraySchema.put("minItems", minItems);
-        arraySchema.put("maxItems", maxItems);
-        arraySchema.put("items", createIdeaItemSchema());
+        arraySchema.put(FIELD_TYPE, TYPE_ARRAY);
+        arraySchema.put(FIELD_MIN_ITEMS, minItems);
+        arraySchema.put(FIELD_MAX_ITEMS, maxItems);
+        arraySchema.put(FIELD_ITEMS, createIdeaItemSchema());
         return arraySchema;
     }
 }

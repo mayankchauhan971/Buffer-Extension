@@ -1,4 +1,4 @@
-package com.buffer.config;
+package com.buffer.web.config;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -31,7 +31,7 @@ public final class AIConstants {
     public static final String SCHEMA_NAME = "content_ideas_schema";
     public static final boolean STRICT_SCHEMA = true;
     public static final int IDEA_MIN_ITEMS = 1;
-    public static final int IDEA_MAX_ITEMS = 3;
+    public static final int IDEA_MAX_ITEMS = 2;
     
     // Content limits
     public static final int MAX_CONTENT_LENGTH = 50000;
@@ -63,9 +63,9 @@ public final class AIConstants {
         "  \"status\": \"SUCCESS\",\n" +
         "  \"summary\": \"brief summary of the content\",\n" +
         "  \"channels\": {\n" +
-        "    \"instagram\": [array of idea objects],\n" +
+        "    \"INSTAGRAM\": [array of idea objects],\n" +
         "    \"X\": [array of idea objects],\n" +
-        "    \"linkedin\": [array of idea objects]\n" +
+        "    \"LINKEDIN\": [array of idea objects]\n" +
         "  }\n" +
         "}\n" +
         "Each idea object should contain: idea, rationale, pros, cons.\n\n";

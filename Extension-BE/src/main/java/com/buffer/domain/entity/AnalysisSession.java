@@ -1,10 +1,12 @@
-package com.buffer.entity;
+package com.buffer.domain.entity;
 
-import com.buffer.dto.request.ContentAnalysisRequest;
+import com.buffer.domain.dto.request.ContentAnalysisRequest;
 import lombok.Data;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+import lombok.ToString;
+import lombok.EqualsAndHashCode;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -54,6 +56,8 @@ public class AnalysisSession {
     
     @OneToMany(mappedBy = "analysisSession", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private List<SocialMediaChannel> socialMediaChannels = new ArrayList<>();
     
     public static AnalysisSession fromContentAnalysisRequest(ContentAnalysisRequest request, String sessionId) {
@@ -71,5 +75,6 @@ public class AnalysisSession {
     
     public void addChannel(SocialMediaChannel socialMediaChannel) {
         this.socialMediaChannels.add(socialMediaChannel);
+        socialMediaChannel.setAnalysisSession(this);
     }
 } 

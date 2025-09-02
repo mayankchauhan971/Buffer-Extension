@@ -1,6 +1,6 @@
-package com.buffer.dto.response;
+package com.buffer.domain.dto.response;
 
-import com.buffer.entity.SocialMediaChannel;
+import com.buffer.domain.entity.SocialMediaChannel;
 import lombok.Data;
 import lombok.Builder;
 

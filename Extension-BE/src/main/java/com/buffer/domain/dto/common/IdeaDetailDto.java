@@ -1,6 +1,6 @@
-package com.buffer.dto.common;
+package com.buffer.domain.dto.common;
 
-import com.buffer.entity.ContentIdea;
+import com.buffer.domain.entity.ContentIdea;
 import lombok.Data;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * Idea Detail DTO
  *
- * Data transfer object representing a single social media content idea with detailed
+ * DTO representing a single social media content idea with detailed
  * information. Contains the core idea description, platform-specific rationale,
  * and balanced perspective with pros/cons analysis. Used within content analysis
  * responses to provide actionable, platform-optimized content suggestions.
@@ -21,13 +21,13 @@ import java.util.List;
 @AllArgsConstructor
 public class IdeaDetailDto {
     
-    // Field name constants for JSON parsing
     public static final String FIELD_CHANNEL = "channel";
     public static final String FIELD_IDEA = "idea";
     public static final String FIELD_RATIONALE = "rationale";
     public static final String FIELD_PROS = "pros";
     public static final String FIELD_CONS = "cons";
     
+    private String channel;
     private String idea;
     private String rationale;
     private List<String> pros;

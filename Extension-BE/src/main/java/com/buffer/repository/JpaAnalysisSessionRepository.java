@@ -1,11 +1,9 @@
 package com.buffer.repository;
 
-import com.buffer.entity.AnalysisSession;
+import com.buffer.domain.entity.AnalysisSession;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -16,7 +14,7 @@ import java.util.List;
 public interface JpaAnalysisSessionRepository extends JpaRepository<AnalysisSession, String> {
     
     /**
-     * Find sessions ordered by creation date (newest first)
+     * Find sessions ordered by creation date (the newest first)
      * @return List of sessions ordered by creation date
      */
     List<AnalysisSession> findAllByOrderByCreatedAtDesc();

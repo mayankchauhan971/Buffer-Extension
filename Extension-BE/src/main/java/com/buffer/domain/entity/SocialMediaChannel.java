@@ -1,11 +1,13 @@
-package com.buffer.entity;
+package com.buffer.domain.entity;
 
-import com.buffer.enums.ChannelType;
+import com.buffer.domain.enums.ChannelType;
 import com.buffer.util.IdGenerator;
 import lombok.Data;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+import lombok.ToString;
+import lombok.EqualsAndHashCode;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -32,6 +34,8 @@ public class SocialMediaChannel {
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "session_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private AnalysisSession analysisSession;
     
     @Enumerated(EnumType.STRING)
@@ -46,6 +50,8 @@ public class SocialMediaChannel {
     
     @OneToMany(mappedBy = "socialMediaChannel", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private List<ContentIdea> contentIdeas = new ArrayList<>();
     
     public static SocialMediaChannel create(AnalysisSession analysisSession, ChannelType name) {
@@ -64,6 +70,7 @@ public class SocialMediaChannel {
     
     public void addIdea(ContentIdea contentIdea) {
         this.contentIdeas.add(contentIdea);
+        contentIdea.setSocialMediaChannel(this);
     }
 
 } 

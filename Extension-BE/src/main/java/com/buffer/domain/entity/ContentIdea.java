@@ -1,10 +1,12 @@
-package com.buffer.entity;
+package com.buffer.domain.entity;
 
 import com.buffer.util.IdGenerator;
 import lombok.Data;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+import lombok.ToString;
+import lombok.EqualsAndHashCode;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -29,6 +31,8 @@ public class ContentIdea {
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "channel_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private SocialMediaChannel socialMediaChannel;
     
     @Column(columnDefinition = "TEXT")

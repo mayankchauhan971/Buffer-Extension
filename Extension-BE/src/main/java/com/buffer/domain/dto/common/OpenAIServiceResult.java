@@ -1,4 +1,4 @@
-package com.buffer.dto.common;
+package com.buffer.domain.dto.common;
 
 /**
  * Result wrapper for OpenAI analysis operations.
