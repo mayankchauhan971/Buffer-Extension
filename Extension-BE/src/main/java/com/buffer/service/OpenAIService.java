@@ -1,10 +1,10 @@
 package com.buffer.service;
 
-import com.buffer.dto.common.OpenAIServiceResult;
-import com.buffer.dto.response.AIAnalysisResponseDto;
-import com.buffer.entity.*;
-import com.buffer.config.AIConstants;
-import com.buffer.enums.ChannelType;
+import com.buffer.domain.dto.common.OpenAIServiceResult;
+import com.buffer.domain.dto.response.OpenAIAnalysisDto;
+import com.buffer.domain.entity.*;
+import com.buffer.web.config.AIConstants;
+
 import com.buffer.util.IdGenerator;
 import com.buffer.integration.openai.JsonSchemaBuilder;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +31,35 @@ import java.util.*;
 @Service
 public class OpenAIService {
     
+    // API endpoint constants
+    private static final String RESPONSES_ENDPOINT = "/responses";
+
+    // Request/Response field constants
+    private static final String FIELD_MODEL = "model";
+    private static final String FIELD_INSTRUCTIONS = "instructions";
+    private static final String FIELD_INPUT = "input";
+    private static final String FIELD_TEXT = "text";
+    private static final String FIELD_FORMAT = "format";
+    private static final String FIELD_TEMPERATURE = "temperature";
+    private static final String FIELD_OUTPUT = "output";
+    private static final String FIELD_MESSAGE = "message";
+    private static final String FIELD_CONTENT = "content";
+    private static final String FIELD_VALUE = "value";
+    private static final String FIELD_STATUS = "status";
+    private static final String FIELD_ERROR = "error";
+
+    // Response format constants
+    private static final String JSON_SCHEMA_TYPE = "json_schema";
+
+    // Error messages
+    private static final String ERROR_EMPTY_RESPONSE = "Failed to get response from OpenAI after retries";
+    private static final String ERROR_PLAIN_TEXT_RESPONSE = "OpenAI failed to return structured data. Received plain text response instead of JSON.";
+
+    // HTTP status codes for retry logic
+    private static final int HTTP_TOO_MANY_REQUESTS = 429;
+    private static final int HTTP_REQUEST_TIMEOUT = 408;
+    private static final int HTTP_SERVER_ERROR_THRESHOLD = 500;
+
     private final WebClient webClient;
 
     // TODO Can be extracted from business context stored at Buffer
@@ -55,30 +84,27 @@ public class OpenAIService {
     }
 
     public OpenAIServiceResult analyzeContentForIdeas(AnalysisSession session, List<String> channels) {
-        log.info("Starting content analysis for session: {} with channels: {}", session.getSessionId(), channels);
 
         if (session.getOriginalContent() == null || session.getOriginalContent().trim().isEmpty()) {
-            log.error("No content to analyze for session: {}", session.getSessionId());
             return OpenAIServiceResult.failure("No content provided for analysis");
         }
 
         List<String> channelsToUse = (channels != null && !channels.isEmpty()) ? channels : defaultChannels;
-        if (channelsToUse.isEmpty()) {
-            log.warn("No channels provided, using default channels: {}", defaultChannels);
-            channelsToUse = defaultChannels;
+
+        // capitalization for consistent handling
+        List<String> capitalizedChannels = new ArrayList<>();
+        for (String channel : channelsToUse) {
+            if (channel != null && !channel.trim().isEmpty()) {
+                capitalizedChannels.add(channel.trim().toUpperCase());
+            }
         }
-        List<String> normalizedChannels = normalizeChannels(channelsToUse);
+        // Remove duplicates while preserving order
+        List<String> uniqueChannels = new ArrayList<>(new LinkedHashSet<>(capitalizedChannels));
 
-        log.debug("Analyzing {} characters of content for {} channels",
-                session.getOriginalContent().length(), normalizedChannels.size());
-
-        String instructions = getSystemPrompt(normalizedChannels);
+        String instructions = getSystemPrompt(uniqueChannels);
         String input = session.getOriginalContent();
 
-        log.debug("Prepared OpenAI responses request, content length: {}, channels: {}",
-                input.length(), normalizedChannels);
-
-        return callOpenAIWithStructuredOutput(instructions, input, createTextFormat(normalizedChannels), normalizedChannels);
+        return callOpenAIWithStructuredOutput(instructions, input, createTextFormat(uniqueChannels), uniqueChannels);
     }
 
     /**
@@ -87,18 +113,16 @@ public class OpenAIService {
     private OpenAIServiceResult callOpenAIWithStructuredOutput(String instructions, String input, Map<String, Object> textFormat, List<String> channels) {
         try {
             Map<String, Object> request = new HashMap<>();
-            request.put("model", AIConstants.OPENAI_MODEL);
-            request.put("instructions", instructions);
-            request.put("input", input);
+            request.put(FIELD_MODEL, AIConstants.OPENAI_MODEL);
+            request.put(FIELD_INSTRUCTIONS, instructions);
+            request.put(FIELD_INPUT, input);
             Map<String, Object> textOptions = new HashMap<>();
-            textOptions.put("format", textFormat);
-            request.put("text", textOptions);
-            request.put("temperature", AIConstants.OPENAI_TEMPERATURE);
-
-            log.debug("Making OpenAI Responses API call - Model: {}, Schema: {}", request.get("model"), AIConstants.SCHEMA_NAME);
+            textOptions.put(FIELD_FORMAT, textFormat);
+            request.put(FIELD_TEXT, textOptions);
+            request.put(FIELD_TEMPERATURE, AIConstants.OPENAI_TEMPERATURE);
 
             Map<String, Object> response = webClient.post()
-                    .uri("/responses")
+                    .uri(RESPONSES_ENDPOINT)
                     .bodyValue(request)
                     .retrieve()
                     .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
@@ -109,23 +133,23 @@ public class OpenAIService {
                                     WebClientResponseException wcre = (WebClientResponseException) throwable;
                                     int statusCode = wcre.getStatusCode().value();
                                     // Retry on rate limits, server errors, and some client errors
-                                    return statusCode == 429 || // Rate limit
-                                           statusCode >= 500 || // Server errors
-                                           statusCode == 408;   // Request timeout
+                                    return statusCode == HTTP_TOO_MANY_REQUESTS || // Rate limit
+                                           statusCode >= HTTP_SERVER_ERROR_THRESHOLD || // Server errors
+                                           statusCode == HTTP_REQUEST_TIMEOUT;   // Request timeout
                                 }
                                 return false;
                             }))
                     .block();
 
             if (response == null) {
-                return OpenAIServiceResult.failure("Failed to get response from OpenAI after retries");
+                return OpenAIServiceResult.failure(ERROR_EMPTY_RESPONSE);
             }
 
             String assistantResponse = null;
             try {
 
                 if (assistantResponse == null) {
-                    Object output = response.get("output");
+                    Object output = response.get(FIELD_OUTPUT);
                     if (output instanceof List) {
                         List<?> outputList = (List<?>) output;
                         StringBuilder aggregated = new StringBuilder();
@@ -133,23 +157,23 @@ public class OpenAIService {
                             if (!(item instanceof Map)) continue;
                             Map<?, ?> itemMap = (Map<?, ?>) item;
                             // Older shape via message -> content
-                            Object message = itemMap.get("message");
+                            Object message = itemMap.get(FIELD_MESSAGE);
                             if (message instanceof Map) {
                                 Map<?, ?> messageMap = (Map<?, ?>) message;
-                                Object content = messageMap.get("content");
+                                Object content = messageMap.get(FIELD_CONTENT);
                                 if (content instanceof List) {
                                     for (Object c : (List<?>) content) {
                                         if (!(c instanceof Map)) continue;
                                         Map<?, ?> cMap = (Map<?, ?>) c;
-                                        Object textPart = cMap.get("text");
+                                        Object textPart = cMap.get(FIELD_TEXT);
                                         if (textPart instanceof Map) {
-                                            Object value = ((Map<?, ?>) textPart).get("value");
+                                            Object value = ((Map<?, ?>) textPart).get(FIELD_VALUE);
                                             if (value instanceof String) {
                                                 aggregated.append((String) value);
                                             }
                                         }
                                         // Some variants may return { type: "output_text", text: "..." }
-                                        Object directText = cMap.get("text");
+                                        Object directText = cMap.get(FIELD_TEXT);
                                         if (directText instanceof String) {
                                             aggregated.append((String) directText);
                                         }
@@ -158,16 +182,16 @@ public class OpenAIService {
                             }
 
                             // Newer shape may put content directly on the item: { content: [...] }
-                            Object itemContent = itemMap.get("content");
+                            Object itemContent = itemMap.get(FIELD_CONTENT);
                             if (itemContent instanceof List) {
                                 for (Object c : (List<?>) itemContent) {
                                     if (!(c instanceof Map)) continue;
                                     Map<?, ?> cMap = (Map<?, ?>) c;
-                                    Object t = cMap.get("text");
+                                    Object t = cMap.get(FIELD_TEXT);
                                     if (t instanceof String) {
                                         aggregated.append((String) t);
                                     } else if (t instanceof Map) {
-                                        Object val = ((Map<?, ?>) t).get("value");
+                                        Object val = ((Map<?, ?>) t).get(FIELD_VALUE);
                                         if (val instanceof String) {
                                             aggregated.append((String) val);
                                         }
@@ -188,8 +212,8 @@ public class OpenAIService {
                 Object status = null;
                 Object error = null;
                 try {
-                    status = ((Map<?, ?>) response).get("status");
-                    error = ((Map<?, ?>) response).get("error");
+                    status = ((Map<?, ?>) response).get(FIELD_STATUS);
+                    error = ((Map<?, ?>) response).get(FIELD_ERROR);
                 } catch (Exception ignored) {}
 
                 StringBuilder err = new StringBuilder("OpenAI returned empty response");
@@ -197,34 +221,14 @@ public class OpenAIService {
                 if (error != null) err.append(" (error=" + error + ")");
                 return OpenAIServiceResult.failure(err.toString());
             }
-            
-            log.debug("Received OpenAI response ({} chars), is JSON: {}",
-                        assistantResponse.length(), assistantResponse.trim().startsWith("{"));
 
             if (!assistantResponse.trim().startsWith("{")) {
                 log.error("OpenAI returned plain text instead of structured JSON. Response: {}", assistantResponse);
-                return OpenAIServiceResult.failure("OpenAI failed to return structured data. Received plain text response instead of JSON.");
-            }
-            
-            // Check for potentially truncated responses
-            if (assistantResponse.length() > 20000) {
-                log.warn("Received very long response ({} chars) - checking for truncation", assistantResponse.length());
-                String trimmed = assistantResponse.trim();
-                if (!trimmed.endsWith("}")) {
-                    log.error("Response appears to be truncated - doesn't end with closing brace. Length: {}, Last 100 chars: {}", 
-                             assistantResponse.length(), 
-                             assistantResponse.substring(Math.max(0, assistantResponse.length() - 100)));
-                    return OpenAIServiceResult.failure("Received truncated response from OpenAI. Please try with shorter content or fewer channels.");
-                }
+                return OpenAIServiceResult.failure(ERROR_PLAIN_TEXT_RESPONSE);
             }
 
             return OpenAIServiceResult.success(assistantResponse);
-            
-        } catch (WebClientResponseException e) {
-            String errorBody = e.getResponseBodyAsString();
-            log.error("OpenAI API Error - Status: " + e.getStatusCode() +
-                        ", Body: " + errorBody + ", Message: " + e.getMessage());
-            return OpenAIServiceResult.failure("OpenAI API Error " + e.getStatusCode() + ": " + errorBody);
+
         } catch (Exception e) {
             log.error("Unexpected error calling OpenAI: {}", e.getMessage(), e);
             return OpenAIServiceResult.failure("Error: " + e.getMessage());
@@ -239,7 +243,7 @@ public class OpenAIService {
             Map<String, Object> schemaDefinition = createSchemaDefinition(channelKeys);
 
             Map<String, Object> format = new HashMap<>();
-            format.put("type", "json_schema");
+            format.put("type", JSON_SCHEMA_TYPE);
             format.put("name", AIConstants.SCHEMA_NAME);
             format.put("strict", AIConstants.STRICT_SCHEMA);
             format.put("schema", schemaDefinition);
@@ -266,32 +270,15 @@ public class OpenAIService {
             }
             
             return JsonSchemaBuilder.create()
-                .addStringProperty(AIAnalysisResponseDto.FIELD_STATUS, true, AIConstants.STATUS_VALUES)
-                .addStringProperty(AIAnalysisResponseDto.FIELD_SUMMARY)
-                .addObjectProperty(AIAnalysisResponseDto.FIELD_CHANNELS, channelProperties, channelKeys, true)
+                .addStringProperty(OpenAIAnalysisDto.FIELD_STATUS, true, AIConstants.STATUS_VALUES)
+                .addStringProperty(OpenAIAnalysisDto.FIELD_SUMMARY)
+                .addObjectProperty(OpenAIAnalysisDto.FIELD_CHANNELS, channelProperties, channelKeys, true)
                 .build();
                 
         } catch (Exception e) {
             log.error("Error creating schema definition: {}", e.getMessage(), e);
-            // Fallback to empty schema to prevent API call failure
             return Map.of("type", "object", "additionalProperties", true);
         }
-    }
-
-    // Normalize requested channels to canonical keys used by schema (e.g., "instagram", "linkedin", "X")
-    private List<String> normalizeChannels(List<String> channels) {
-        List<String> mapped = new ArrayList<>();
-        for (String ch : channels) {
-            try {
-                ChannelType channelType = ChannelType.fromString(ch);
-                String normalizedName = channelType == ChannelType.X ? "X" : channelType.name().toLowerCase();
-                mapped.add(normalizedName);
-            } catch (IllegalArgumentException e) {
-                log.warn("Ignoring unknown channel: {}", ch);
-            }
-        }
-        // De-duplicate while preserving order
-        return new ArrayList<>(new LinkedHashSet<>(mapped));
     }
 
     private String getSystemPrompt(List<String> channels) {

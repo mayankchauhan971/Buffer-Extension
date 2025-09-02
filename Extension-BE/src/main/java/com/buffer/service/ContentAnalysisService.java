@@ -1,13 +1,14 @@
 package com.buffer.service;
 
-import com.buffer.dto.common.IdeaDetailDto;
-import com.buffer.dto.request.ContentAnalysisRequest;
-import com.buffer.dto.response.ContentAnalysisResponse;
-import com.buffer.dto.response.AIAnalysisResponseDto;
+import com.buffer.domain.dto.common.IdeaDetailDto;
+import com.buffer.domain.dto.request.ContentAnalysisRequest;
+import com.buffer.domain.dto.response.ContentAnalysisResponse;
+
+import com.buffer.domain.dto.response.OpenAIAnalysisDto;
 import com.buffer.repository.AnalysisSessionRepository;
-import com.buffer.dto.common.OpenAIServiceResult;
-import com.buffer.entity.*;
-import com.buffer.enums.ContentAnalysisStatus;
+import com.buffer.domain.dto.common.OpenAIServiceResult;
+import com.buffer.domain.entity.*;
+import com.buffer.domain.enums.ContentAnalysisStatus;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +30,34 @@ import java.util.*;
 @Service
 public class ContentAnalysisService {
     
+    // Message constants
+    private static final class Messages {
+        static final String NO_CONTENT = "No content provided for analysis - please ensure the page content is being " +
+                "captured properly by the extension. Check if the page has loaded completely or if there are any " +
+                "content extraction issues.";
+        static final String INCOMPLETE_RESPONSE = "Received incomplete response from AI service. Please try again.";
+        static final String AI_COULD_NOT_ANALYZE = "AI could not analyze content";
+        static final String CONTENT_ANALYZED_SUCCESSFULLY = "Content analyzed successfully";
+        
+        static final String ANALYSIS_ERROR_PREFIX = "Analysis error: ";
+        static final String PARSE_AI_RESPONSE_PREFIX = "Failed to parse AI response: ";
+        
+        static final String INCOMPLETE_RESPONSE_KEYWORD = "incomplete response";
+    }
+    
+    // Log message templates
+    private static final class LogMessages {
+        static final String EARLY_RETURN = "EARLY RETURN: Empty or null content received for URL: {} (content: [{}], length: {})";
+        static final String OPENAI_FAILED = "OpenAI analysis failed for session: {} - {}";
+        static final String ERROR_ANALYZING = "Error analyzing screen content: {}";
+        static final String INVALID_JSON = "Invalid or truncated JSON response detected. {}";
+        static final String PARSE_FAILED = "Failed to parse AI analysis response: {} | Content length: {} ";
+        static final String JSON_NULL_EMPTY = "JSON content is null or empty";
+        static final String JSON_STRUCTURE = "JSON doesn't start with {{ or end with }}: {}";
+        static final String UNBALANCED_JSON = "Unbalanced JSON structure: braces={}, brackets={}";
+        static final String JSON_VALIDATION_FAILED = "JSON structure validation failed: {}";
+    }
+
     private final OpenAIService openAIService;
     private final AnalysisSessionRepository repository;
     private final ObjectMapper objectMapper;
@@ -44,60 +73,40 @@ public class ContentAnalysisService {
      * Process screen content and generate structured ideas by channel
      */
     public ContentAnalysisResponse analyzeScreenContent(ContentAnalysisRequest request) {
-        log.info("Analyzing screen content for URL: {}", request.getUrl());
-        
+
         if (request.getFullText() == null || request.getFullText().trim().isEmpty()) {
-            log.warn("EARLY RETURN: Empty or null content received for URL: {} (content: [{}], length: {})", 
+            log.warn(LogMessages.EARLY_RETURN, 
                        request.getUrl(), 
-                       request.getFullText(), 
-                       request.getFullText() != null ? request.getFullText().length() : "NULL");
-            return createFailureResponse("", "No content provided for analysis - please ensure the page content is being captured properly by the extension. Check if the page has loaded completely or if there are any content extraction issues.");
+                       request.getFullText(),
+                       request.getFullText().length());
+            return createFailureResponse("", Messages.NO_CONTENT);
         }
 
         try {
             String sessionId = openAIService.generateChatId();
-            log.info("Generated session ID: {}", sessionId);
-            
             AnalysisSession session = AnalysisSession.fromContentAnalysisRequest(request, sessionId);
-            
-            if (session.getOriginalContent() == null || session.getOriginalContent().trim().isEmpty()) {
-                log.error("CRITICAL: Content lost during Context creation! Request had {} chars, Context has null/empty content", 
-                           request.getFullText().length());
-                return createFailureResponse(sessionId, "Content was lost during processing");
-            }
-            
-            log.debug("Context created successfully with {} chars of content", 
-                        session.getOriginalContent().length());
-            
-            log.info("Making OpenAI call for session: {}", sessionId);
+
             OpenAIServiceResult aiResponse;
             
-            // Check content length and potentially truncate for better success rate
-            if (session.getOriginalContent().length() > com.buffer.config.AIConstants.MAX_CONTENT_LENGTH) {
-                log.warn("Content length ({} chars) exceeds maximum. Truncating to {} chars for analysis.", 
-                        session.getOriginalContent().length(), com.buffer.config.AIConstants.TRUNCATED_CONTENT_LENGTH);
-                session.setOriginalContent(session.getOriginalContent().substring(0, com.buffer.config.AIConstants.TRUNCATED_CONTENT_LENGTH));
+            // Tradeoff between availability and accuracy - truncating long content for higher success rate with OpenAI
+            if (session.getOriginalContent().length() > com.buffer.web.config.AIConstants.MAX_CONTENT_LENGTH) {
+                session.setOriginalContent(session.getOriginalContent().substring(0, com.buffer.web.config.AIConstants.TRUNCATED_CONTENT_LENGTH));
             }
-            
+
             if (request.getChannels() != null && !request.getChannels().isEmpty()) {
-                log.info("Using custom channels from request: {}", request.getChannels());
                 aiResponse = openAIService.analyzeContentForIdeas(session, request.getChannels());
             } else {
-                log.info("Using default channels");
                 aiResponse = openAIService.analyzeContentForIdeas(session);
             }
             
             if (aiResponse.isSuccess()) {
-                log.info("OpenAI analysis successful for session: {}", sessionId);
                 ContentAnalysisResponse response = parseAndStoreAnalysis(aiResponse, session);
                 
                 // If parsing failed due to truncated response, try once more with shorter content
                 if (response.getStatus() == ContentAnalysisStatus.FAILURE && 
-                    response.getSummary().contains("incomplete response") &&
-                    session.getOriginalContent().length() > com.buffer.config.AIConstants.TRUNCATED_CONTENT_LENGTH) {
-                    
-                    log.warn("Retrying analysis with shorter content for session: {}", sessionId);
-                    session.setOriginalContent(session.getOriginalContent().substring(0, com.buffer.config.AIConstants.TRUNCATED_CONTENT_LENGTH));
+                    response.getSummary().contains(Messages.INCOMPLETE_RESPONSE_KEYWORD) &&
+                    session.getOriginalContent().length() > com.buffer.web.config.AIConstants.TRUNCATED_CONTENT_LENGTH) {
+                    session.setOriginalContent(session.getOriginalContent().substring(0, com.buffer.web.config.AIConstants.TRUNCATED_CONTENT_LENGTH));
                     
                     OpenAIServiceResult retryResponse;
                     if (request.getChannels() != null && !request.getChannels().isEmpty()) {
@@ -107,20 +116,19 @@ public class ContentAnalysisService {
                     }
                     
                     if (retryResponse.isSuccess()) {
-                        log.info("Retry analysis successful for session: {}", sessionId);
                         return parseAndStoreAnalysis(retryResponse, session);
                     }
                 }
                 
                 return response;
             } else {
-                log.warn("OpenAI analysis failed for session: {} - {}", sessionId, aiResponse.getErrorMessage());
-                return createFailureResponse(sessionId, "AI analysis failed: " + aiResponse.getErrorMessage());
+                log.warn(LogMessages.OPENAI_FAILED, sessionId, aiResponse.getErrorMessage());
+                return createFailureResponse(sessionId, Messages.ANALYSIS_ERROR_PREFIX + aiResponse.getErrorMessage());
             }
             
         } catch (Exception e) {
-            log.error("Error analyzing screen content: {}", e.getMessage(), e);
-            return createFailureResponse("", "Analysis error: " + e.getMessage());
+            log.error(LogMessages.ERROR_ANALYZING, e.getMessage(), e);
+            return createFailureResponse("", Messages.ANALYSIS_ERROR_PREFIX + e.getMessage());
         }
     }
     
@@ -130,47 +138,39 @@ public class ContentAnalysisService {
     private ContentAnalysisResponse parseAndStoreAnalysis(OpenAIServiceResult aiResponse, AnalysisSession session) {
         try {
             String jsonContent = aiResponse.getContent();
-            log.debug("Parsing AI analysis response length: {} chars", jsonContent != null ? jsonContent.length() : 0);
-            
-            // Validate JSON completeness before parsing
+
+            // Additional safety net to check valid json despite using structured output
             if (!isValidJsonStructure(jsonContent)) {
-                log.error("Invalid or truncated JSON response detected. Response length: {}, Content preview: {}", 
-                         jsonContent != null ? jsonContent.length() : 0,
-                         jsonContent != null && jsonContent.length() > 200 ? 
-                             jsonContent.substring(0, 200) + "..." : jsonContent);
+                log.error(LogMessages.INVALID_JSON, jsonContent);
                 return createFailureResponse(session.getSessionId(), 
-                    "Received incomplete response from AI service. Please try again.");
+                    Messages.INCOMPLETE_RESPONSE);
             }
             
-            Map<String, Object> aiData = objectMapper.readValue(jsonContent, Map.class);
+            OpenAIAnalysisDto aiData = objectMapper.readValue(jsonContent, OpenAIAnalysisDto.class);
             
-            String aiStatus = (String) aiData.get(AIAnalysisResponseDto.FIELD_STATUS);
-            String summary = (String) aiData.get(AIAnalysisResponseDto.FIELD_SUMMARY);
+            String aiStatus = aiData.getStatus();
+            String summary = aiData.getSummary();
             
             if (!ContentAnalysisStatus.SUCCESS.name().equals(aiStatus)) {
                 return createFailureResponse(session.getSessionId(), 
-                    summary != null ? summary : "AI could not analyze content");
+                    summary != null ? summary : Messages.AI_COULD_NOT_ANALYZE);
             }
             
-            Map<String, Object> channelsData = (Map<String, Object>) aiData.get(AIAnalysisResponseDto.FIELD_CHANNELS);
+            Map<String, List<IdeaDetailDto>> channelsData = aiData.getChannels();
             if (channelsData != null) {
                 parseChannelsStructure(session, channelsData);
             }
             
-            session.setSummary(summary != null ? summary : "Content analyzed successfully");
+            session.setSummary(summary != null ? summary : Messages.CONTENT_ANALYZED_SUCCESSFULLY);
             
             repository.storeSession(session);
             
             return buildSuccessResponse(session, summary);
             
         } catch (JsonProcessingException e) {
-            log.error("Failed to parse AI analysis response: {}", e.getMessage());
-            log.error("Response content length: {}", aiResponse.getContent() != null ? aiResponse.getContent().length() : 0);
-            if (aiResponse.getContent() != null && aiResponse.getContent().length() > 500) {
-                log.error("Response start: {}", aiResponse.getContent().substring(0, 500));
-                log.error("Response end: {}", aiResponse.getContent().substring(Math.max(0, aiResponse.getContent().length() - 500)));
-            }
-            return createFailureResponse(session.getSessionId(), "Failed to parse AI response: " + e.getMessage());
+            String content = aiResponse.getContent();
+            log.error(LogMessages.PARSE_FAILED, e.getMessage(), content.length());
+            return createFailureResponse(session.getSessionId(), Messages.PARSE_AI_RESPONSE_PREFIX + e.getMessage());
         }
     }
     
@@ -179,7 +179,7 @@ public class ContentAnalysisService {
      */
     private boolean isValidJsonStructure(String jsonContent) {
         if (jsonContent == null || jsonContent.trim().isEmpty()) {
-            log.warn("JSON content is null or empty");
+            log.warn(LogMessages.JSON_NULL_EMPTY);
             return false;
         }
         
@@ -187,9 +187,7 @@ public class ContentAnalysisService {
         
         // Basic structure checks
         if (!trimmed.startsWith("{") || !trimmed.endsWith("}")) {
-            log.warn("JSON doesn't start with {{ or end with }}: starts={}, ends={}", 
-                    trimmed.length() > 0 ? trimmed.charAt(0) : "empty",
-                    trimmed.length() > 0 ? trimmed.charAt(trimmed.length() - 1) : "empty");
+            log.warn(LogMessages.JSON_STRUCTURE, trimmed);
             return false;
         }
         
@@ -236,7 +234,7 @@ public class ContentAnalysisService {
         }
         
         if (braceCount != 0 || bracketCount != 0) {
-            log.warn("Unbalanced JSON structure: braces={}, brackets={}", braceCount, bracketCount);
+            log.warn(LogMessages.UNBALANCED_JSON, braceCount, bracketCount);
             return false;
         }
         
@@ -245,73 +243,37 @@ public class ContentAnalysisService {
             objectMapper.readTree(trimmed);
             return true;
         } catch (JsonProcessingException e) {
-            log.warn("JSON structure validation failed: {}", e.getMessage());
+            log.warn(LogMessages.JSON_VALIDATION_FAILED, e.getMessage());
             return false;
-        }
-    }
-    
-    /**
-     * Parse flat ideas array from AI response
-     */
-    private void parseIdeasArray(AnalysisSession session, List<Map<String, Object>> ideasData) {
-        // Group ideas by channel
-        Map<String, SocialMediaChannel> channelMap = new HashMap<>();
-        
-        for (Map<String, Object> ideaData : ideasData) {
-            String channelName = (String) ideaData.get(IdeaDetailDto.FIELD_CHANNEL);
-            
-            // Get or create channel
-            SocialMediaChannel socialMediaChannel = channelMap.get(channelName);
-            if (socialMediaChannel == null) {
-                socialMediaChannel = SocialMediaChannel.create(session, channelName);
-                channelMap.put(channelName, socialMediaChannel);
-            }
-            
-            // Create idea for this channel
-            ContentIdea contentIdea = ContentIdea.create(
-                socialMediaChannel,
-                (String) ideaData.get(IdeaDetailDto.FIELD_IDEA),
-                (String) ideaData.get(IdeaDetailDto.FIELD_RATIONALE),
-                (List<String>) ideaData.get(IdeaDetailDto.FIELD_PROS),
-                (List<String>) ideaData.get(IdeaDetailDto.FIELD_CONS)
-            );
-            socialMediaChannel.addIdea(contentIdea);
-        }
-        
-        // Add all channels to session
-        for (SocialMediaChannel socialMediaChannel : channelMap.values()) {
-            session.addChannel(socialMediaChannel);
-            log.debug("Added channel '{}' with {} ideas", socialMediaChannel.getName().name(), socialMediaChannel.getContentIdeas().size());
         }
     }
 
     /**
      * Parse channels structure from AI response
      */
-    private void parseChannelsStructure(AnalysisSession session, Map<String, Object> channelsData) {
-        for (Map.Entry<String, Object> channelEntry : channelsData.entrySet()) {
+    private void parseChannelsStructure(AnalysisSession session, Map<String, List<IdeaDetailDto>> channelsData) {
+        for (Map.Entry<String, List<IdeaDetailDto>> channelEntry : channelsData.entrySet()) {
             String channelName = channelEntry.getKey();
-            List<Map<String, Object>> ideasData = (List<Map<String, Object>>) channelEntry.getValue();
+            List<IdeaDetailDto> ideasData = channelEntry.getValue();
             
             // Create channel
             SocialMediaChannel socialMediaChannel = SocialMediaChannel.create(session, channelName);
             
             // Parse ideas for this channel
             if (ideasData != null) {
-                for (Map<String, Object> ideaData : ideasData) {
+                for (IdeaDetailDto ideaData : ideasData) {
                     ContentIdea contentIdea = ContentIdea.create(
                         socialMediaChannel,
-                        (String) ideaData.get(IdeaDetailDto.FIELD_IDEA),
-                        (String) ideaData.get(IdeaDetailDto.FIELD_RATIONALE),
-                        (List<String>) ideaData.get(IdeaDetailDto.FIELD_PROS),
-                        (List<String>) ideaData.get(IdeaDetailDto.FIELD_CONS)
+                        ideaData.getIdea(),
+                        ideaData.getRationale(),
+                        ideaData.getPros(),
+                        ideaData.getCons()
                     );
                     socialMediaChannel.addIdea(contentIdea);
                 }
             }
             
             session.addChannel(socialMediaChannel);
-            log.debug("Added channel '{}' with {} ideas", channelName, socialMediaChannel.getContentIdeas().size());
         }
     }
     
@@ -322,9 +284,8 @@ public class ContentAnalysisService {
         ContentAnalysisResponse response = new ContentAnalysisResponse();
         response.setStatus(ContentAnalysisStatus.SUCCESS);
         response.setChatID(session.getSessionId());
-        response.setSummary(summary != null ? summary : "Content analyzed successfully");
+        response.setSummary(summary != null ? summary : Messages.CONTENT_ANALYZED_SUCCESSFULLY);
         
-        // Convert to the format expected by frontend - now supporting multiple ideas per channel
         Map<String, List<IdeaDetailDto>> channelsMap = new LinkedHashMap<>();
         
         for (SocialMediaChannel socialMediaChannel : session.getSocialMediaChannels()) {
@@ -351,7 +312,7 @@ public class ContentAnalysisService {
         response.setStatus(ContentAnalysisStatus.FAILURE);
         response.setChatID(sessionId);
         response.setSummary(errorMessage);
-        response.setChannels(new HashMap<>()); // Empty map for channels on failure
+        response.setChannels(new HashMap<>());
         return response;
     }
     

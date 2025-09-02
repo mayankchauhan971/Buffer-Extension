@@ -1,8 +1,7 @@
 package com.buffer.repository;
 
-import com.buffer.entity.AnalysisSession;
+import com.buffer.domain.entity.AnalysisSession;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Repository interface for managing AnalysisSession persistence.

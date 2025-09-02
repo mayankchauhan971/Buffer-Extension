@@ -1,10 +1,10 @@
-package com.buffer.dto.response;
+package com.buffer.domain.dto.response;
 
-import com.buffer.dto.common.IdeaDetailDto;
+import com.buffer.domain.dto.common.IdeaDetailDto;
 import lombok.Data;
 import java.util.Map;
 import java.util.List;
-import com.buffer.enums.ContentAnalysisStatus;
+import com.buffer.domain.enums.ContentAnalysisStatus;
 
 /**
  * Content Analysis Response DTO

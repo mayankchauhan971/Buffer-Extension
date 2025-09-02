@@ -1,4 +1,4 @@
-package com.buffer.dto.response;
+package com.buffer.domain.dto.response;
 
 import lombok.Data;
 import lombok.Builder;

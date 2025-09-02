@@ -1,4 +1,4 @@
-package com.buffer.enums;
+package com.buffer.domain.enums;
 
 public enum ChannelType {
     LINKEDIN,
