@@ -71,6 +71,11 @@ Storage: Repository layer follows repository pattern, currently using an in-mem 
 
 Monitoring: The Monitoring controller interacts and exposes storage methods, mainly for debugging purposes, currently.
 
+**Sequence Diagram**
+
+<img width="697" height="1194" alt="Screenshot 2025-09-02 at 1 11 57 PM" src="https://github.com/user-attachments/assets/85282e0e-85fd-4973-abe1-e7078492048f" />
+
+
 I'm a backend engineer with limited frontend knowledge and used LLM for coding UI. Backend is built in Java, language I'm most comfortable in. Authentication flow is not implemented since Buffer no longer supports the creation of new developer apps. [https://buffer.com/developers/api/oauth]
 
 ---
