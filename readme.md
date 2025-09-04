@@ -1,9 +1,16 @@
-# Content Ideation Copilot – Chrome Extension
-
 ## TL;DR
 Content ideation is hard because creativity isn’t constant—it surges and stalls. What if ideation were effortless—a copilot that, with one click on any page or article, generates multiple socialMediaChannel-specific ideas (not finished posts) with clear rationale, pros and cons, and the option to expand any contentIdea into a polished post—each tailored to brand voice and goals and delivered straight into Buffer for scheduling and collaboration.
 
 Welcome to a mini-project crafted to help me be considered for an interview at Buffer:  **a Content Ideation Copilot Chrome extension.**
+
+**Screenshots**
+
+<img width="376" height="735" alt="flowStart" src="https://github.com/user-attachments/assets/cc0b7f9a-cb7b-472d-8aca-f754135a4551" />
+<img width="375" height="730" alt="analyzeContent" src="https://github.com/user-attachments/assets/1cd1c04f-15df-4377-922b-69aa606f83ee" />
+<img width="439" height="735" alt="flowScreen" src="https://github.com/user-attachments/assets/9d8c74a5-3919-497f-bea8-63274d74cbaf" />
+<img width="434" height="738" alt="ideasGenerated" src="https://github.com/user-attachments/assets/98f3eb50-5c44-4f02-84cd-cfe879ab92fe" />
+<img width="699" height="942" alt="bufferExport" src="https://github.com/user-attachments/assets/0259365c-d1b4-4384-b89d-f2a58bda9b91" />
+
 
 ---
 
