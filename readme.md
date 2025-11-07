@@ -14,12 +14,6 @@ Welcome to a mini-project crafted to help me be considered for an interview at B
 
 ---
 
-### Demo Video
-Demo Link -
-https://www.loom.com/share/5a9098e4ccc04ff693d92709ebf89151?sid=3521e6f5-56b4-4889-af70-69139a8400a5
-
----
-
 ## Problem Statement
 
 ### **Who are the current users?**
@@ -91,7 +85,6 @@ I'm a backend engineer with limited frontend knowledge and used LLM for coding U
 
 I know Buffer gets tons of great applications so had to get creative to stand out :)
 
-Video on my rationale and small introduction - https://www.loom.com/share/705df813dd074a19a6bd716e6f80aa47?sid=8b3b6add-cf2d-4df8-b4ca-8ceea3af4567
 - I love the idea of remote work, radical transparency, and gratefulness (something I'm trying to inculcate in daily life) and would love to get a chance to interview for a backend engineer role at Buffer.
 - I have worked in the social field (managed Sprinklr's publishing product, transitioned from product management to engineering), have created content on LinkedIn (grew it to 8K followers) and Instagram (to market my startups), and love building things. I think I might be a good fit for engineering role at Buffer
 
